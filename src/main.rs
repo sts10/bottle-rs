@@ -2,6 +2,7 @@ use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::iter;
+use std::path::Path;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -15,27 +16,31 @@ struct Opt {
 }
 
 fn main() {
-    let opt = Opt::from_args();
-
-    // I'm sure we can do this better...
-    let file_name_to_encrypt = opt.target_file.to_str().unwrap();
-    let file_to_encrypt = fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
-
     // Set up hard-coded key
     const KEY_FILE: &str = "key.txt";
     let key = read_key_from_file(KEY_FILE);
     let pubkey = key.to_public();
 
-    // let plaintext = b"Hello world!";
-    // need to read plain.txt into bytes here
-    // let file = File::open(file_name_to_encrypt).expect("file not found!");
-    // let reader = BufReader::new(file);
+    let opt = Opt::from_args();
+    // I'm sure we can do this better...
+    let target_file_name = opt.target_file.to_str().unwrap();
+    let extension = Path::new(target_file_name).extension().unwrap();
+    println!("Found extension to be: {:?}", extension);
+    let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
 
-    // Encrypt the plaintext to a ciphertext...
-    let encrypted = encrypt_file(pubkey, &file_to_encrypt);
+    if extension == "age" {
+        // let encrypted_file_to_decrypt =
+        let decrypted = decrypt_file(target_file, key);
+        write_file_to_system(&decrypted, "decrypted.txt")
+            .expect("Unable to write encrypted data to a file");
+    } else {
+        // Encrypt the plaintext to a ciphertext...
+        let encrypted = encrypt_file(pubkey, &target_file);
 
-    write_file_to_system(&encrypted, "output.txt.age")
-        .expect("Unable to write encrypted data to a file");
+        write_file_to_system(&encrypted, "output.txt.age")
+            .expect("Unable to write encrypted data to a file");
+    }
+
     println!("Done!");
 }
 
@@ -95,7 +100,7 @@ mod tests {
             fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
 
         // Set up hard-coded key
-        const KEY_FILE: &str = "test.txt";
+        const KEY_FILE: &str = "key.txt";
         let key = read_key_from_file(KEY_FILE);
         let pubkey = key.to_public();
 
