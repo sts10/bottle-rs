@@ -5,6 +5,7 @@ use std::iter;
 use std::path::Path;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use tar::Archive;
 
 /// bottle: Archive tool
 #[derive(StructOpt, Debug)]
@@ -15,6 +16,7 @@ struct Opt {
     target_file: PathBuf,
 }
 
+// fn main() -> std::io::Result<()> {
 fn main() {
     // Set up hard-coded key
     const KEY_FILE: &str = "key.txt";
@@ -30,12 +32,25 @@ fn main() {
     if is_dir {
         println!("Making a tar!");
         let tar_file_name = "mytarfile.tar";
-        make_tar_from_dir(target_file_name, tar_file_name);
+        make_tar_from_dir(target_file_name, tar_file_name)
+            .expect("Unable to make tar from given directory");
         println!("Done with make_tar_from_dir call");
         let encrypted = encrypt_file(pubkey, &fs::read(tar_file_name).unwrap());
 
         write_file_to_system(&encrypted, "output.tar.age")
             .expect("Unable to write encrypted data to a file");
+    } else if target_file_name.ends_with(".tar.age") {
+        // If it's an encrypted and tar'd file...
+        let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
+        let decrypted = decrypt_file(target_file, key);
+        write_file_to_system(&decrypted, "decrypted.tar")
+            .expect("Unable to write encrypted data to a file");
+
+        let file = File::open("_decrypted.tar").unwrap();
+        let mut a = Archive::new(file);
+        // https://docs.rs/tar/latest/tar/struct.Archive.html#method.unpack
+        a.unpack("unpacked").unwrap();
+        fs::remove_file("_decrypted.tar").unwrap();
     } else {
         let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
         let extension = Path::new(target_file_name).extension().unwrap().to_str();
@@ -125,7 +140,7 @@ fn write_file_to_system(data: &Vec<u8>, file_name: &str) -> std::io::Result<()> 
 mod tests {
     use crate::*;
     #[test]
-    fn it_works() {
+    fn can_encrypt_and_decrypt_a_txt_file() {
         let file_name_to_encrypt = "plain.txt";
         let file_to_encrypt =
             fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
