@@ -24,21 +24,29 @@ fn main() {
     let opt = Opt::from_args();
     // I'm sure we can do this better...
     let target_file_name = opt.target_file.to_str().unwrap();
-    let extension = Path::new(target_file_name).extension().unwrap();
-    println!("Found extension to be: {:?}", extension);
-    let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
 
-    if extension == "age" {
-        // let encrypted_file_to_decrypt =
-        let decrypted = decrypt_file(target_file, key);
-        write_file_to_system(&decrypted, "decrypted.txt")
-            .expect("Unable to write encrypted data to a file");
+    let is_dir = fs::metadata(target_file_name).unwrap().file_type().is_dir();
+
+    if is_dir {
+        println!("Making a tar!");
+        make_tar_from_dir(target_file_name, "mytar.tar");
+        println!("Done with make_tar_from_dir call");
     } else {
-        // Encrypt the plaintext to a ciphertext...
-        let encrypted = encrypt_file(pubkey, &target_file);
+        let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
+        let extension = Path::new(target_file_name).extension().unwrap().to_str();
 
-        write_file_to_system(&encrypted, "output.txt.age")
-            .expect("Unable to write encrypted data to a file");
+        if extension == Some("age") {
+            // let encrypted_file_to_decrypt =
+            let decrypted = decrypt_file(target_file, key);
+            write_file_to_system(&decrypted, "decrypted.txt")
+                .expect("Unable to write encrypted data to a file");
+        } else {
+            // Encrypt the plaintext to a ciphertext...
+            let encrypted = encrypt_file(pubkey, &target_file);
+
+            write_file_to_system(&encrypted, "output.txt.age")
+                .expect("Unable to write encrypted data to a file");
+        }
     }
 
     println!("Done!");
@@ -82,6 +90,24 @@ fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
     reader.read_to_end(&mut decrypted);
 
     decrypted
+}
+
+use tar::Builder;
+fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Error> {
+    // https://docs.rs/tar/latest/tar/struct.Builder.html#method.append_dir_all
+    // let mut ar = Builder::new(Vec::new());
+
+    let file = File::create(tar_name).unwrap();
+    let mut a = Builder::new(file);
+
+    println!("Created Builder");
+    // Use the directory at one location, but insert it into the archive
+    // with a different name.
+    a.append_dir_all(dir_name, ".").unwrap();
+
+    println!("Done appending dir");
+    a.finish();
+    Ok(())
 }
 
 fn write_file_to_system(data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
