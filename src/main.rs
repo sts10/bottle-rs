@@ -29,8 +29,13 @@ fn main() {
 
     if is_dir {
         println!("Making a tar!");
-        make_tar_from_dir(target_file_name, "mytar.tar");
+        let tar_file_name = "mytarfile.tar";
+        make_tar_from_dir(target_file_name, tar_file_name);
         println!("Done with make_tar_from_dir call");
+        let encrypted = encrypt_file(pubkey, &fs::read(tar_file_name).unwrap());
+
+        write_file_to_system(&encrypted, "output.tar.age")
+            .expect("Unable to write encrypted data to a file");
     } else {
         let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
         let extension = Path::new(target_file_name).extension().unwrap().to_str();
@@ -103,7 +108,7 @@ fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Erro
     println!("Created Builder");
     // Use the directory at one location, but insert it into the archive
     // with a different name.
-    a.append_dir_all(dir_name, ".").unwrap();
+    a.append_dir_all(".", dir_name).unwrap();
 
     println!("Done appending dir");
     a.finish();
