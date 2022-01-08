@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 age = "0.7.1"
+structopt = "0.3"

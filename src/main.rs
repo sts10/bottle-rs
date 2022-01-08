@@ -1,27 +1,41 @@
 use std::fs;
+use std::fs::File;
 use std::io::{Read, Write};
 use std::iter;
+use std::path::PathBuf;
+use structopt::StructOpt;
+
+/// bottle: Archive tool
+#[derive(StructOpt, Debug)]
+#[structopt(name = "bottle")]
+struct Opt {
+    /// CSV of family names
+    #[structopt(name = "TARGET", parse(from_os_str))]
+    target_file: PathBuf,
+}
 
 fn main() {
-    const KEY_FILE: &str = "test.txt";
+    let opt = Opt::from_args();
+
+    // I'm sure we can do this better...
+    let file_name_to_encrypt = opt.target_file.to_str().unwrap();
+    let file_to_encrypt = fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
+
+    // Set up hard-coded key
+    const KEY_FILE: &str = "key.txt";
     let key = read_key_from_file(KEY_FILE);
     let pubkey = key.to_public();
 
     // let plaintext = b"Hello world!";
     // need to read plain.txt into bytes here
-    let file_name_to_encrypt = "plain.txt";
     // let file = File::open(file_name_to_encrypt).expect("file not found!");
     // let reader = BufReader::new(file);
-    let file_to_encrypt = fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
 
     // Encrypt the plaintext to a ciphertext...
     let encrypted = encrypt_file(pubkey, &file_to_encrypt);
 
-    // ... and decrypt the obtained ciphertext to the plaintext again.
-    let decrypted = decrypt_file(encrypted, key);
-
-    // assert_eq!(decrypted, plaintext);
-    assert_eq!(decrypted, file_to_encrypt);
+    write_file_to_system(&encrypted, "output.txt.age")
+        .expect("Unable to write encrypted data to a file");
     println!("Done!");
 }
 
@@ -63,4 +77,34 @@ fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
     reader.read_to_end(&mut decrypted);
 
     decrypted
+}
+
+fn write_file_to_system(data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
+    let mut file = File::create(file_name)?;
+    file.write_all(data)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    #[test]
+    fn it_works() {
+        let file_name_to_encrypt = "plain.txt";
+        let file_to_encrypt =
+            fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
+
+        // Set up hard-coded key
+        const KEY_FILE: &str = "test.txt";
+        let key = read_key_from_file(KEY_FILE);
+        let pubkey = key.to_public();
+
+        // Encrypt the plaintext to a ciphertext...
+        let encrypted = encrypt_file(pubkey, &file_to_encrypt);
+
+        // ... and decrypt the obtained ciphertext to the plaintext again.
+        let decrypted = decrypt_file(encrypted, key);
+
+        assert_eq!(decrypted, file_to_encrypt);
+    }
 }
