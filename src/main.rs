@@ -15,33 +15,10 @@ fn main() {
     let file_to_encrypt = fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
 
     // Encrypt the plaintext to a ciphertext...
-    let encrypted = {
-        let encryptor = age::Encryptor::with_recipients(vec![Box::new(pubkey)]);
-
-        let mut encrypted = vec![];
-        let mut writer = encryptor.wrap_output(&mut encrypted).unwrap();
-        // writer.write_all(plaintext).unwrap();
-        writer.write_all(&file_to_encrypt).unwrap();
-        writer.finish().unwrap();
-
-        encrypted
-    };
+    let encrypted = encrypt_file(pubkey, &file_to_encrypt);
 
     // ... and decrypt the obtained ciphertext to the plaintext again.
-    let decrypted = {
-        let decryptor = match age::Decryptor::new(&encrypted[..]).unwrap() {
-            age::Decryptor::Recipients(d) => d,
-            _ => unreachable!(),
-        };
-
-        let mut decrypted = vec![];
-        let mut reader = decryptor
-            .decrypt(iter::once(&key as &dyn age::Identity))
-            .unwrap();
-        reader.read_to_end(&mut decrypted);
-
-        decrypted
-    };
+    let decrypted = decrypt_file(encrypted, key);
 
     // assert_eq!(decrypted, plaintext);
     assert_eq!(decrypted, file_to_encrypt);
@@ -59,4 +36,31 @@ fn read_key_from_file(file_name: &str) -> age::x25519::Identity {
         _ => unreachable!(),
     };
     key
+}
+
+fn encrypt_file(pubkey: age::x25519::Recipient, file_to_encrypt: &Vec<u8>) -> Vec<u8> {
+    let encryptor = age::Encryptor::with_recipients(vec![Box::new(pubkey)]);
+
+    let mut encrypted = vec![];
+    let mut writer = encryptor.wrap_output(&mut encrypted).unwrap();
+    // writer.write_all(plaintext).unwrap();
+    writer.write_all(&file_to_encrypt).unwrap();
+    writer.finish().unwrap();
+
+    encrypted
+}
+
+fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
+    let decryptor = match age::Decryptor::new(&encrypted[..]).unwrap() {
+        age::Decryptor::Recipients(d) => d,
+        _ => unreachable!(),
+    };
+
+    let mut decrypted = vec![];
+    let mut reader = decryptor
+        .decrypt(iter::once(&key as &dyn age::Identity))
+        .unwrap();
+    reader.read_to_end(&mut decrypted);
+
+    decrypted
 }
