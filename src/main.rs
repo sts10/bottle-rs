@@ -16,8 +16,8 @@ struct Opt {
     target_file: PathBuf,
 }
 
-// fn main() -> std::io::Result<()> {
-fn main() {
+// fn main() {
+fn main() -> std::io::Result<()> {
     // Set up hard-coded key
     // Use the home crate to get user's $HOME directory
     let home_dir = match home::home_dir() {
@@ -32,15 +32,17 @@ fn main() {
     // I'm sure we can do this better...
     let target_file_name = opt.target_file.to_str().unwrap();
 
-    let metadata = fs::metadata(target_file_name).unwrap();
+    let metadata = fs::metadata(target_file_name)?;
     let is_dir = metadata.file_type().is_dir();
 
     if is_dir {
         // Given a directory. We need to tar it, then encrypt it
         encrypt_dir(pubkey, target_file_name);
+        Ok(())
     } else if target_file_name.ends_with(".tar.age") {
         // If it's an encrypted and tar'd file...
         decrypt_dir(key, target_file_name);
+        Ok(())
     } else {
         // If we're here that means we were given a file.
         let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
@@ -52,6 +54,7 @@ fn main() {
             let decrypted = decrypt_file(target_file, key);
             write_file_to_system(&decrypted, "decrypted.txt")
                 .expect("Unable to write encrypted data to a file");
+            Ok(())
         } else {
             // Else, it's a regular, unencrypted file user
             // wants to encrypt with age key
@@ -59,6 +62,7 @@ fn main() {
 
             write_file_to_system(&encrypted, "output.txt.age")
                 .expect("Unable to write encrypted data to a file");
+            Ok(())
         }
     }
 }
@@ -71,7 +75,7 @@ fn read_key_from_file(file_name: &str) -> age::x25519::Identity {
     // right now
     let key = match identify_file_entry[0].clone() {
         age::IdentityFileEntry::Native(i) => i,
-        _ => unreachable!(),
+        // _ => unreachable!(),
     };
     key
 }
@@ -98,7 +102,9 @@ fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
     let mut reader = decryptor
         .decrypt(iter::once(&key as &dyn age::Identity))
         .unwrap();
-    reader.read_to_end(&mut decrypted);
+    reader
+        .read_to_end(&mut decrypted)
+        .expect("Error decrypting file");
 
     decrypted
 }
@@ -142,8 +148,7 @@ fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Erro
     // https://docs.rs/tar/latest/tar/struct.Builder.html#method.append_dir_all
     a.append_dir_all(".", dir_name).unwrap();
 
-    a.finish();
-    Ok(())
+    a.finish()
 }
 
 fn write_file_to_system(data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
