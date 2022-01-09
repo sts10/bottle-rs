@@ -110,15 +110,22 @@ fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
 fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
     let output_name = parse_out_put_name(target_file_name);
 
-    let tar_file_name = "_tarfile.tar";
-    make_tar_from_dir(target_file_name, tar_file_name)
+    // This is a potential security issue.
+    // But at least this temporary tar file is created in the same
+    // directory as the directory that we're bottling, NOT in the current
+    // working directory, which user likely does NOT
+    // want an unencrypted tar file to exists, even momentarily.
+    let temp_tar_file_path = target_file_name.to_owned() + "_tarfile.tar";
+
+    make_tar_from_dir(target_file_name, &temp_tar_file_path)
         .expect("Unable to make tar from given directory");
-    let encrypted = encrypt_file(pubkey, &fs::read(tar_file_name).unwrap());
+    let encrypted = encrypt_file(pubkey, &fs::read(&temp_tar_file_path).unwrap());
+
+    // Clean up
+    fs::remove_file(&temp_tar_file_path).unwrap();
 
     write_file_to_system(&encrypted, &(output_name + ".tar.age"))
         .expect("Unable to write encrypted data to a file");
-
-    fs::remove_file("_tarfile.tar").unwrap();
 }
 
 fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) {
