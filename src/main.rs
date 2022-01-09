@@ -196,4 +196,19 @@ mod tests {
 
         assert_eq!(decrypted, file_to_encrypt);
     }
+    #[test]
+    fn can_encrypt_and_decrypt_a_directory() {
+        let dir_name_to_encrypt = "test-files/test-dir";
+
+        // Set up hard-coded key
+        const KEY_FILE: &str = "key.txt";
+        let key = read_key_from_file(KEY_FILE);
+        let pubkey = key.to_public();
+
+        encrypt_dir(pubkey, dir_name_to_encrypt);
+        fs::remove_dir_all(dir_name_to_encrypt).unwrap();
+        decrypt_dir(key, encrypted);
+
+        // assert_eq!(decrypted, file_to_encrypt);
+    }
 }
