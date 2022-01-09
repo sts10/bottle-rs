@@ -46,6 +46,7 @@ ARGS:
 ## To do
 
 - [ ] Ability to encrypt a directory with only access to a public key. (Looks like I would use age's `-R` flag.)
+- [ ] Have it be way more cautious when potentially overwriting a file or directory.
 - [ ] Ability to print (public) key of key-pair at `~/age/bottle.key`
 - [ ] Consider an option NOT to compress directory before encrypting it. Would need to be able to unbottle .tar.age files.
 - [ ] An option to use your ssh key instead ([which age supports](https://github.com/FiloSottile/age#ssh-keys))
