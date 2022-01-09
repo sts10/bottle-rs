@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use tar::Archive;
 
-/// bottle: Compress and encrypt (and decrypt and extract files or directories using age and tar.
+/// bottle: Compress and encrypt (and decrypt and extract files or directories using age, gzip, and tar.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "bottle")]
 struct Opt {
