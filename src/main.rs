@@ -196,19 +196,47 @@ mod tests {
 
         assert_eq!(decrypted, file_to_encrypt);
     }
+
     #[test]
     fn can_encrypt_and_decrypt_a_directory() {
-        let dir_name_to_encrypt = "test-files/test-dir";
-
         // Set up hard-coded key
         const KEY_FILE: &str = "key.txt";
         let key = read_key_from_file(KEY_FILE);
         let pubkey = key.to_public();
 
-        encrypt_dir(pubkey, dir_name_to_encrypt);
-        fs::remove_dir_all(dir_name_to_encrypt).unwrap();
-        decrypt_dir(key, encrypted);
+        // Declare our test dir
+        let dir_name_to_encrypt = "test-files/test-dir";
 
-        // assert_eq!(decrypted, file_to_encrypt);
+        // this should create a `test-dir.tar.age` in WORKING directory
+        encrypt_dir(pubkey, dir_name_to_encrypt);
+
+        // this should create a `test-dir` in WORKING directory
+        // decrypt_dir(key, &(dir_name_to_encrypt.to_owned() + ".tar.age"));
+        decrypt_dir(key, "test-dir.tar.age");
+
+        // Finally, here's the test:
+        // Read `./test-dir/file.txt` and make sure it includes the plaintext
+        let contents =
+            fs::read_to_string("test-dir/file.txt").expect("Something went wrong reading the file");
+        assert_eq!(contents, "This is a file.\n");
+
+        // Clean up working directory
+        fs::remove_file("test-dir.tar.age").unwrap();
+        fs::remove_dir_all("test-dir").unwrap();
+    }
+
+    #[test]
+    fn can_get_target_output_name() {
+        // file
+        assert_eq!(parse_out_put_name("test.txt"), "test");
+        // directory
+        assert_eq!(parse_out_put_name("foor/bar"), "bar");
+        // longer rel path
+        assert_eq!(parse_out_put_name("foo/bar/test.tar.age"), "test");
+        // Absolute path
+        assert_eq!(
+            parse_out_put_name("/home/user/foo/baz/test.tar.gz.age"),
+            "test"
+        );
     }
 }
