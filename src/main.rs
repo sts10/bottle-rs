@@ -73,20 +73,18 @@ fn read_key_from_file(file_name: &str) -> age::x25519::Identity {
         .into_identities();
     // Bummed about this clone(), but can't figure out another way
     // right now
-    let key = match identify_file_entry[0].clone() {
+    match identify_file_entry[0].clone() {
         age::IdentityFileEntry::Native(i) => i,
         // _ => unreachable!(),
-    };
-    key
+    }
 }
 
-fn encrypt_file(pubkey: age::x25519::Recipient, file_to_encrypt: &Vec<u8>) -> Vec<u8> {
+fn encrypt_file(pubkey: age::x25519::Recipient, file_to_encrypt: &[u8]) -> Vec<u8> {
     let encryptor = age::Encryptor::with_recipients(vec![Box::new(pubkey)]);
 
     let mut encrypted = vec![];
     let mut writer = encryptor.wrap_output(&mut encrypted).unwrap();
-    // writer.write_all(plaintext).unwrap();
-    writer.write_all(&file_to_encrypt).unwrap();
+    writer.write_all(file_to_encrypt).unwrap();
     writer.finish().unwrap();
 
     encrypted
@@ -117,7 +115,7 @@ fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
         .expect("Unable to make tar from given directory");
     let encrypted = encrypt_file(pubkey, &fs::read(tar_file_name).unwrap());
 
-    write_file_to_system(&encrypted, &(output_name.to_owned() + ".tar.age"))
+    write_file_to_system(&encrypted, &(output_name + ".tar.age"))
         .expect("Unable to write encrypted data to a file");
 
     fs::remove_file("_tarfile.tar").unwrap();
@@ -151,7 +149,7 @@ fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Erro
     a.finish()
 }
 
-fn write_file_to_system(data: &Vec<u8>, file_name: &str) -> std::io::Result<()> {
+fn write_file_to_system(data: &[u8], file_name: &str) -> std::io::Result<()> {
     let mut file = File::create(file_name)?;
     file.write_all(data)?;
     Ok(())
