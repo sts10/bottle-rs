@@ -20,21 +20,20 @@ struct Opt {
 fn main() {
     // Set up hard-coded key
     // const KEY_FILE: &str = "test-files/key.txt";
-    const KEY_FILE: &str = "$HOME/.bottle/bottle.key";
+    // Might need to use the home crate here? https://stackoverflow.com/a/64918980
+    const KEY_FILE: &str = "/home/sschlinkert/.bottle/bottle.key";
     let key = read_key_from_file(KEY_FILE);
     let pubkey = key.to_public();
 
     let opt = Opt::from_args();
     // I'm sure we can do this better...
     let target_file_name = opt.target_file.to_str().unwrap();
-    println!("target_file_name is {}", target_file_name);
 
     let metadata = fs::metadata(target_file_name).unwrap();
     let is_dir = metadata.file_type().is_dir();
 
     if is_dir {
         // Given a directory. We need to tar it, then encrypt it
-        println!("Making a tar!");
         encrypt_dir(pubkey, target_file_name);
     } else if target_file_name.ends_with(".tar.age") {
         // If it's an encrypted and tar'd file...
@@ -59,8 +58,6 @@ fn main() {
                 .expect("Unable to write encrypted data to a file");
         }
     }
-
-    println!("Done!");
 }
 
 fn read_key_from_file(file_name: &str) -> age::x25519::Identity {
@@ -109,7 +106,6 @@ fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
     let tar_file_name = "_tarfile.tar";
     make_tar_from_dir(target_file_name, tar_file_name)
         .expect("Unable to make tar from given directory");
-    println!("Done with make_tar_from_dir call");
     let encrypted = encrypt_file(pubkey, &fs::read(tar_file_name).unwrap());
 
     write_file_to_system(&encrypted, &(output_name.to_owned() + ".tar.age"))
@@ -135,18 +131,14 @@ fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) {
 
 use tar::Builder;
 fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Error> {
-    // https://docs.rs/tar/latest/tar/struct.Builder.html#method.append_dir_all
-    // let mut ar = Builder::new(Vec::new());
-
     let file = File::create(tar_name).unwrap();
     let mut a = Builder::new(file);
 
-    println!("Created Builder");
     // Use the directory at one location, but insert it into the archive
     // with a different name.
+    // https://docs.rs/tar/latest/tar/struct.Builder.html#method.append_dir_all
     a.append_dir_all(".", dir_name).unwrap();
 
-    println!("Done appending dir");
     a.finish();
     Ok(())
 }
