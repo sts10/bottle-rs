@@ -19,10 +19,13 @@ struct Opt {
 // fn main() -> std::io::Result<()> {
 fn main() {
     // Set up hard-coded key
-    // const KEY_FILE: &str = "test-files/key.txt";
-    // Might need to use the home crate here? https://stackoverflow.com/a/64918980
-    const KEY_FILE: &str = "/home/sschlinkert/.bottle/bottle.key";
-    let key = read_key_from_file(KEY_FILE);
+    // Use the home crate to get user's $HOME directory
+    let home_dir = match home::home_dir() {
+        Some(path) => path,
+        None => panic!("Impossible to get your home dir!"),
+    };
+    let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle.key";
+    let key = read_key_from_file(&key_file_location);
     let pubkey = key.to_public();
 
     let opt = Opt::from_args();
