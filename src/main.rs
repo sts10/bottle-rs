@@ -19,7 +19,7 @@ struct Opt {
 // fn main() -> std::io::Result<()> {
 fn main() {
     // Set up hard-coded key
-    const KEY_FILE: &str = "key.txt";
+    const KEY_FILE: &str = "test-files/key.txt";
     let key = read_key_from_file(KEY_FILE);
     let pubkey = key.to_public();
 
@@ -179,12 +179,12 @@ mod tests {
     use crate::*;
     #[test]
     fn can_encrypt_and_decrypt_a_txt_file() {
-        let file_name_to_encrypt = "plain.txt";
+        let file_name_to_encrypt = "test-files/plain.txt";
         let file_to_encrypt =
             fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
 
         // Set up hard-coded key
-        const KEY_FILE: &str = "key.txt";
+        const KEY_FILE: &str = "test-files/key.txt";
         let key = read_key_from_file(KEY_FILE);
         let pubkey = key.to_public();
 
@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn can_encrypt_and_decrypt_a_directory() {
         // Set up hard-coded key
-        const KEY_FILE: &str = "key.txt";
+        const KEY_FILE: &str = "test-files/key.txt";
         let key = read_key_from_file(KEY_FILE);
         let pubkey = key.to_public();
 
