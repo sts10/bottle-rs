@@ -25,9 +25,11 @@ fn main() -> std::io::Result<()> {
     // Use the home crate to get user's $HOME directory
     let home_dir = match home::home_dir() {
         Some(path) => path,
-        None => panic!("Impossible to get your home dir!"),
+        None => {
+            panic!("Unable to find your HOME directory, and thus can not locate age key-pair file. Exiting.")
+        }
     };
-    let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle.key";
+    let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle_key.txt";
     let key = read_key_from_file(&key_file_location);
     let pubkey = key.to_public();
 
@@ -166,7 +168,7 @@ fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) {
     // At this point, decrypted_bytes needs to be decompressed.
     let mut d = GzDecoder::new(&*decrypted_bytes);
     let mut bytes = vec![];
-    d.read_to_end(&mut bytes);
+    d.read_to_end(&mut bytes).expect("Error uncompressing file");
     write_file_to_system(&bytes, "_decrypted.tar")
         .expect("Unable to write decrypted data to a file");
 
