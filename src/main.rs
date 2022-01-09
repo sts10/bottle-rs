@@ -56,7 +56,13 @@ fn main() -> std::io::Result<()> {
             // If extension is age, we assume it's an encrypted age file
             // that user wants to decrypt
             let decrypted = decrypt_file(target_file, key);
-            write_file_to_system(&decrypted, "decrypted.txt")
+            let output_filename = Path::new(target_file_name)
+                .file_stem() // strip the .age extenion
+                .unwrap()
+                .to_str()
+                .unwrap();
+
+            write_file_to_system(&decrypted, output_filename)
                 .expect("Unable to write encrypted data to a file");
             Ok(())
         } else {
@@ -64,7 +70,13 @@ fn main() -> std::io::Result<()> {
             // wants to encrypt with age key
             let encrypted = encrypt_file(pubkey, &target_file);
 
-            write_file_to_system(&encrypted, "output.txt.age")
+            let output_filename = Path::new(target_file_name)
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap();
+            // add the .age extension
+            write_file_to_system(&encrypted, &(output_filename.to_owned() + ".age"))
                 .expect("Unable to write encrypted data to a file");
             Ok(())
         }
