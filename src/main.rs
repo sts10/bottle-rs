@@ -7,11 +7,11 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use tar::Archive;
 
-/// bottle: Archive tool
+/// bottle: Encrypted archive tool that uses tar and age file encryption
 #[derive(StructOpt, Debug)]
 #[structopt(name = "bottle")]
 struct Opt {
-    /// CSV of family names
+    /// Target file or directory to either encrypt or decrypt.
     #[structopt(name = "TARGET", parse(from_os_str))]
     target_file: PathBuf,
 }
@@ -19,7 +19,8 @@ struct Opt {
 // fn main() -> std::io::Result<()> {
 fn main() {
     // Set up hard-coded key
-    const KEY_FILE: &str = "test-files/key.txt";
+    // const KEY_FILE: &str = "test-files/key.txt";
+    const KEY_FILE: &str = "$HOME/.bottle/bottle.key";
     let key = read_key_from_file(KEY_FILE);
     let pubkey = key.to_public();
 

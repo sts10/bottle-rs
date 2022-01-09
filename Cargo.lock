@@ -112,8 +112,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "bottle-rs"
-version = "0.1.0"
+name = "bottle"
+version = "0.1.3"
 dependencies = [
  "age",
  "structopt",
