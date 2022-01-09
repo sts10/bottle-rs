@@ -1,6 +1,6 @@
 # Bottle
 
-A Rush script to compress and encrypt (and decrypt and extract) files or directories using [age](https://github.com/FiloSottile/age) and tar. 
+A Rush script to compress and encrypt (and decrypt and extract) files or directories using [age](https://github.com/FiloSottile/age), gzip, and tar. 
 
 Bottle has no config options and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
 
