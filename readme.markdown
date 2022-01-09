@@ -4,11 +4,21 @@ A Rush script to compress and encrypt (and decrypt and extract) files or directo
 
 Bottle has no config options and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
 
+**This program is currently just a toy. I would not use it for real-world encryption at this time.**
+
 ## Install
 
+### Preqrequisites
+
 1. [Install Rust](https://www.rust-lang.org/tools/install), if you haven't already. Recommend version 1.57+.
-2. Run `cargo install --git https://github.com/sts10/bottle-rs --branch main`
-3. Make an age key for Bottle to use by running: `mkdir ~/.bottle && age-keygen -o ~/.bottle/bottle.key`
+2. [Install age](https://github.com/FiloSottile/age#installation). Bottle requires age version 1.0+. The related age-keygen should be included with that install (check with age-keygen --version).
+
+### Installing Bottle itself
+
+1. Run `cargo install --git https://github.com/sts10/bottle-rs --branch main`
+2. Make an age key-pair file for Bottle to use by running: `mkdir ~/.bottle && age-keygen -o ~/.bottle/bottle.key`. You can also move a previously-created age key-pair to that location.
+
+Bottle's executable command is `bottle`.
 
 ## Usage 
 
@@ -18,6 +28,20 @@ Bottle will always create the outputted file **in the current working directory*
 - Compress and encrypt a directory with `bottle <path/to/directory>`. 
 - Decrypt an age-encrypted file with `bottle <path/to/file>.age`
 - Decrypt and extract a `.tar.gz.age` file with `bottle <path/to/archive>.tar.gz.age`.
+
+### Help text
+
+```
+USAGE:
+    bottle <TARGET>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+ARGS:
+    <TARGET>    Target file or directory to either encrypt or decrypt
+```
 
 ## To do
 
