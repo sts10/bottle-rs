@@ -20,7 +20,6 @@ struct Opt {
     target_file: PathBuf,
 }
 
-// fn main() {
 fn main() -> std::io::Result<()> {
     // Set up hard-coded key
     // Use the home crate to get user's $HOME directory
@@ -49,35 +48,17 @@ fn main() -> std::io::Result<()> {
         Ok(())
     } else {
         // If we're here that means we were given a file.
-        let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
         let extension = Path::new(target_file_name).extension().unwrap().to_str();
 
         if extension == Some("age") {
             // If extension is age, we assume it's an encrypted age file
             // that user wants to decrypt
-            let decrypted = decrypt_file(target_file, key);
-            let output_filename = Path::new(target_file_name)
-                .file_stem() // strip the .age extenion
-                .unwrap()
-                .to_str()
-                .unwrap();
-
-            write_file_to_system(&decrypted, output_filename)
-                .expect("Unable to write encrypted data to a file");
+            decrypt_file(key, target_file_name);
             Ok(())
         } else {
             // Else, it's a regular, unencrypted file user
             // wants to encrypt with age key
-            let encrypted = encrypt_file(pubkey, &target_file);
-
-            let output_filename = Path::new(target_file_name)
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap();
-            // add the .age extension
-            write_file_to_system(&encrypted, &(output_filename.to_owned() + ".age"))
-                .expect("Unable to write encrypted data to a file");
+            encrypt_file(key, target_file_name);
             Ok(())
         }
     }
@@ -95,7 +76,7 @@ fn read_key_from_file(file_name: &str) -> age::x25519::Identity {
     }
 }
 
-fn encrypt_file(pubkey: age::x25519::Recipient, file_to_encrypt: &[u8]) -> Vec<u8> {
+fn encrypt_bytes(pubkey: age::x25519::Recipient, file_to_encrypt: &[u8]) -> Vec<u8> {
     let encryptor = age::Encryptor::with_recipients(vec![Box::new(pubkey)]);
 
     let mut encrypted = vec![];
@@ -106,7 +87,7 @@ fn encrypt_file(pubkey: age::x25519::Recipient, file_to_encrypt: &[u8]) -> Vec<u
     encrypted
 }
 
-fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
+fn decrypt_bytes(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
     let decryptor = match age::Decryptor::new(&encrypted[..]).unwrap() {
         age::Decryptor::Recipients(d) => d,
         _ => unreachable!(),
@@ -121,6 +102,33 @@ fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
         .expect("Error decrypting file");
 
     decrypted
+}
+
+fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) {
+    let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
+    let encrypted = encrypt_bytes(key.to_public(), &target_file);
+
+    let output_filename = Path::new(target_file_name)
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap();
+    // add the .age extension
+    write_file_to_system(&encrypted, &(output_filename.to_owned() + ".age"))
+        .expect("Unable to write encrypted data to a file");
+}
+
+fn decrypt_file(key: age::x25519::Identity, target_file_name: &str) {
+    let target_file = fs::read(target_file_name).expect("Unable to read file to decrypt");
+    let decrypted = decrypt_bytes(target_file, key);
+    let output_filename = Path::new(target_file_name)
+        .file_stem() // strip the .age extenion
+        .unwrap()
+        .to_str()
+        .unwrap();
+
+    write_file_to_system(&decrypted, output_filename)
+        .expect("Unable to write encrypted data to a file");
 }
 
 fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
@@ -139,7 +147,7 @@ fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
     e.write_all(&tar_file_as_bytes).unwrap();
     let compressed_bytes = e.finish().unwrap();
 
-    let encrypted = encrypt_file(pubkey, &compressed_bytes);
+    let encrypted = encrypt_bytes(pubkey, &compressed_bytes);
 
     // Clean up
     fs::remove_file(&temp_tar_file_path).unwrap();
@@ -151,7 +159,7 @@ fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
 
 fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) {
     let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
-    let decrypted_bytes = decrypt_file(target_file, key);
+    let decrypted_bytes = decrypt_bytes(target_file, key);
     // write_file_to_system(&decrypted, "_decrypted.tar.gz")
     //     .expect("Unable to write encrypted data to a file");
 
@@ -212,8 +220,35 @@ pub fn split_and_vectorize<'a>(string_to_split: &'a str, splitter: &str) -> Vec<
 #[cfg(test)]
 mod tests {
     use crate::*;
+
     #[test]
-    fn can_encrypt_and_decrypt_a_txt_file() {
+    fn can_encrypt_and_decrypt_a_txt_file_harder() {
+        let file_name_to_encrypt = "test-files/plain.txt";
+
+        // Set up hard-coded key
+        const KEY_FILE: &str = "test-files/key.txt";
+        let key = read_key_from_file(KEY_FILE);
+
+        // Create plain.txt.age
+        encrypt_file(key.clone(), &file_name_to_encrypt);
+        // Decrypt plain.txt.age to plain.txt
+        decrypt_file(key, "plain.txt.age");
+
+        // Now read the contents of the original clear text file...
+        let original_contents = fs::read_to_string("test-files/plain.txt")
+            .expect("Something went wrong reading the file");
+        // ... and the content of the decrypted file
+        let decrypted_contents =
+            fs::read_to_string("plain.txt").expect("Something went wrong reading the file");
+        // And compared them
+        assert_eq!(original_contents, decrypted_contents);
+        // Clean up working directory
+        fs::remove_file("plain.txt").unwrap();
+        fs::remove_file("plain.txt.age").unwrap();
+    }
+
+    #[test]
+    fn can_encrypt_and_decrypt_the_bytes_of_a_txt_file() {
         let file_name_to_encrypt = "test-files/plain.txt";
         let file_to_encrypt =
             fs::read(file_name_to_encrypt).expect("Unable to read file to encrypt");
@@ -224,10 +259,10 @@ mod tests {
         let pubkey = key.to_public();
 
         // Encrypt the plaintext to a ciphertext...
-        let encrypted = encrypt_file(pubkey, &file_to_encrypt);
+        let encrypted = encrypt_bytes(pubkey, &file_to_encrypt);
 
         // ... and decrypt the obtained ciphertext to the plaintext again.
-        let decrypted = decrypt_file(encrypted, key);
+        let decrypted = decrypt_bytes(encrypted, key);
 
         assert_eq!(decrypted, file_to_encrypt);
     }
