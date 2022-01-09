@@ -1,5 +1,9 @@
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use std::fs;
 use std::fs::File;
+// use std::io::prelude::*;
 use std::io::{Read, Write};
 use std::iter;
 use std::path::Path;
@@ -39,7 +43,7 @@ fn main() -> std::io::Result<()> {
         // Given a directory. We need to tar it, then encrypt it
         encrypt_dir(pubkey, target_file_name);
         Ok(())
-    } else if target_file_name.ends_with(".tar.age") {
+    } else if target_file_name.ends_with(".tar.gz.age") {
         // If it's an encrypted and tar'd file...
         decrypt_dir(key, target_file_name);
         Ok(())
@@ -108,9 +112,7 @@ fn decrypt_file(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
 }
 
 fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
-    let output_name = parse_out_put_name(target_file_name);
-
-    // This is a potential security issue.
+    // Writing a plaintext tar file to the file system is a potential security issue.
     // But at least this temporary tar file is created in the same
     // directory as the directory that we're bottling, NOT in the current
     // working directory, which user likely does NOT
@@ -119,21 +121,36 @@ fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
 
     make_tar_from_dir(target_file_name, &temp_tar_file_path)
         .expect("Unable to make tar from given directory");
-    let encrypted = encrypt_file(pubkey, &fs::read(&temp_tar_file_path).unwrap());
+    // Now we compress the temp_tar_file_path with gzip
+    let tar_file_as_bytes = fs::read(&temp_tar_file_path).unwrap();
+    let mut e = GzEncoder::new(Vec::new(), Compression::default());
+    e.write_all(&tar_file_as_bytes).unwrap();
+    let compressed_bytes = e.finish().unwrap();
+
+    let encrypted = encrypt_file(pubkey, &compressed_bytes);
 
     // Clean up
     fs::remove_file(&temp_tar_file_path).unwrap();
 
-    write_file_to_system(&encrypted, &(output_name + ".tar.age"))
+    let output_name = parse_out_put_name(target_file_name);
+    write_file_to_system(&encrypted, &(output_name + ".tar.gz.age"))
         .expect("Unable to write encrypted data to a file");
 }
 
 fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) {
     let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
-    let decrypted = decrypt_file(target_file, key);
-    write_file_to_system(&decrypted, "_decrypted.tar")
-        .expect("Unable to write encrypted data to a file");
+    let decrypted_bytes = decrypt_file(target_file, key);
+    // write_file_to_system(&decrypted, "_decrypted.tar.gz")
+    //     .expect("Unable to write encrypted data to a file");
 
+    // At this point, decrypted_bytes needs to be decompressed.
+    let mut d = GzDecoder::new(&*decrypted_bytes);
+    let mut bytes = vec![];
+    d.read_to_end(&mut bytes);
+    write_file_to_system(&bytes, "_decrypted.tar")
+        .expect("Unable to write decrypted data to a file");
+
+    // Finally, we untar the file.
     let file = File::open("_decrypted.tar").unwrap();
     let mut a = Archive::new(file);
 
@@ -218,7 +235,7 @@ mod tests {
 
         // this should create a `test-dir` in WORKING directory
         // decrypt_dir(key, &(dir_name_to_encrypt.to_owned() + ".tar.age"));
-        decrypt_dir(key, "test-dir.tar.age");
+        decrypt_dir(key, "test-dir.tar.gz.age");
 
         // Finally, here's the test:
         // Read `./test-dir/file.txt` and make sure it includes the plaintext
@@ -227,7 +244,7 @@ mod tests {
         assert_eq!(contents, "This is a file.\n");
 
         // Clean up working directory
-        fs::remove_file("test-dir.tar.age").unwrap();
+        fs::remove_file("test-dir.tar.gz.age").unwrap();
         fs::remove_dir_all("test-dir").unwrap();
     }
 
@@ -238,7 +255,7 @@ mod tests {
         // directory
         assert_eq!(parse_out_put_name("foor/bar"), "bar");
         // longer rel path
-        assert_eq!(parse_out_put_name("foo/bar/test.tar.age"), "test");
+        assert_eq!(parse_out_put_name("foo/bar/test.tar.gz.age"), "test");
         // Absolute path
         assert_eq!(
             parse_out_put_name("/home/user/foo/baz/test.tar.gz.age"),

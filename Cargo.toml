@@ -1,10 +1,11 @@
 [package]
 name = "bottle"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 
 [dependencies]
 age = "0.7.1"
 tar = "0.4"
+flate2 = "1.0"
 structopt = "0.3"
 home = "0.5.3"
