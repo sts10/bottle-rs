@@ -1,13 +1,47 @@
+use age::secrecy::ExposeSecret;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::iter;
 use std::path::Path;
 use tar::Archive;
 use tar::Builder;
+
+pub fn generate_key_pair_if_none_exists(key_file_path: &str) {
+    if Path::new(key_file_path).exists() {
+        // eprintln!(
+        //     "Age Identity (key-pair) already exists at {}\n Won't create a new one.",
+        //     key_file_path
+        // );
+    } else {
+        eprintln!("No existing Age Identity (key-pair) found. Creating a new Age Identity for Bottle to use at {}", key_file_path);
+        generate_key_pair_to_file(key_file_path);
+    }
+}
+
+fn generate_key_pair_to_file(key_file_path: &str) {
+    let sk = age::x25519::Identity::generate();
+    let pk = sk.to_public();
+
+    eprintln!("Public key: {}", pk);
+    let mut f = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(key_file_path)
+        .unwrap();
+    writeln!(
+        f,
+        "# created: {}",
+        chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    )
+    .unwrap();
+    writeln!(f, "# public key: {}", pk).unwrap();
+    writeln!(f, "{}", sk.to_string().expose_secret()).unwrap();
+}
 
 pub fn read_key_from_file(file_name: &str) -> age::x25519::Identity {
     let identify_file_entry = age::IdentityFile::from_file(file_name.to_string())

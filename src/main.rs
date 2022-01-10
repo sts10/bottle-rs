@@ -27,6 +27,8 @@ fn main() -> std::io::Result<()> {
         }
     };
     let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle_key.txt";
+    generate_key_pair_if_none_exists(&key_file_location);
+
     let key = read_key_from_file(&key_file_location);
     let pubkey = key.to_public();
 
