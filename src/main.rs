@@ -8,6 +8,10 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 #[structopt(name = "bottle")]
 struct Opt {
+    /// Force overwrite when creating a file
+    #[structopt(short = "f", long = "force")]
+    force_overwrite: bool,
+
     /// File or directory to either encrypt or decrypt.
     /// If given a directory, will tar, then gzip (compress), then encrypt, creating a file with
     /// the extension .tar.gz.age.
@@ -44,10 +48,10 @@ fn main() -> std::io::Result<()> {
 
     if is_dir {
         // Given a directory. We need to tar it, gzip it, then encrypt it
-        encrypt_dir(pubkey, target_file_name)
+        encrypt_dir(pubkey, target_file_name, opt.force_overwrite)
     } else if target_file_name.ends_with(".tar.gz.age") {
         // If it's an encrypted and tar'd file...
-        decrypt_dir(key, target_file_name)
+        decrypt_dir(key, target_file_name, opt.force_overwrite)
     } else {
         // If we're here that means we were given a file.
         // Let's find the extension of the file so we know what
@@ -57,11 +61,11 @@ fn main() -> std::io::Result<()> {
         if extension == Some("age") {
             // If extension is age, we assume it's an encrypted age file
             // that user wants to decrypt
-            decrypt_file(key, target_file_name)
+            decrypt_file(key, target_file_name, opt.force_overwrite)
         } else {
             // Else, it's a regular, unencrypted file user
             // wants to encrypt with age key
-            encrypt_file(key, target_file_name)
+            encrypt_file(key, target_file_name, opt.force_overwrite)
         }
     }
 }
