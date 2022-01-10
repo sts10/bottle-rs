@@ -41,27 +41,25 @@ fn main() -> std::io::Result<()> {
     let is_dir = metadata.file_type().is_dir();
 
     if is_dir {
-        // Given a directory. We need to tar it, then encrypt it
-        encrypt_dir(pubkey, target_file_name);
-        Ok(())
+        // Given a directory. We need to tar it, gzip it, then encrypt it
+        encrypt_dir(pubkey, target_file_name)
     } else if target_file_name.ends_with(".tar.gz.age") {
         // If it's an encrypted and tar'd file...
-        decrypt_dir(key, target_file_name);
-        Ok(())
+        decrypt_dir(key, target_file_name)
     } else {
         // If we're here that means we were given a file.
+        // Let's find the extension of the file so we know what
+        // to do with it.
         let extension = Path::new(target_file_name).extension().unwrap().to_str();
 
         if extension == Some("age") {
             // If extension is age, we assume it's an encrypted age file
             // that user wants to decrypt
-            decrypt_file(key, target_file_name);
-            Ok(())
+            decrypt_file(key, target_file_name)
         } else {
             // Else, it's a regular, unencrypted file user
             // wants to encrypt with age key
-            encrypt_file(key, target_file_name);
-            Ok(())
+            encrypt_file(key, target_file_name)
         }
     }
 }
@@ -106,8 +104,8 @@ fn decrypt_bytes(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
     decrypted
 }
 
-fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) {
-    let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
+fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
+    let target_file = fs::read(target_file_name)?;
     let encrypted = encrypt_bytes(key.to_public(), &target_file);
 
     let output_filename = Path::new(target_file_name)
@@ -117,11 +115,10 @@ fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) {
         .unwrap();
     // add the .age extension
     write_file_to_system(&encrypted, &(output_filename.to_owned() + ".age"))
-        .expect("Unable to write encrypted data to a file");
 }
 
-fn decrypt_file(key: age::x25519::Identity, target_file_name: &str) {
-    let target_file = fs::read(target_file_name).expect("Unable to read file to decrypt");
+fn decrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
+    let target_file = fs::read(target_file_name)?;
     let decrypted = decrypt_bytes(target_file, key);
     let output_filename = Path::new(target_file_name)
         .file_stem() // strip the .age extenion
@@ -130,10 +127,9 @@ fn decrypt_file(key: age::x25519::Identity, target_file_name: &str) {
         .unwrap();
 
     write_file_to_system(&decrypted, output_filename)
-        .expect("Unable to write encrypted data to a file");
 }
 
-fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
+fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) -> std::io::Result<()> {
     // Writing a plaintext tar file to the file system is a potential security issue.
     // But at least this temporary tar file is created in the same
     // directory as the directory that we're bottling, NOT in the current
@@ -144,42 +140,39 @@ fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) {
     make_tar_from_dir(target_file_name, &temp_tar_file_path)
         .expect("Unable to make tar from given directory");
     // Now we compress the temp_tar_file_path with gzip
-    let tar_file_as_bytes = fs::read(&temp_tar_file_path).unwrap();
+    let tar_file_as_bytes = fs::read(&temp_tar_file_path)?;
     let mut e = GzEncoder::new(Vec::new(), Compression::default());
-    e.write_all(&tar_file_as_bytes).unwrap();
-    let compressed_bytes = e.finish().unwrap();
+    e.write_all(&tar_file_as_bytes)?;
+    let compressed_bytes = e.finish()?;
 
     let encrypted = encrypt_bytes(pubkey, &compressed_bytes);
 
     // Clean up
-    fs::remove_file(&temp_tar_file_path).unwrap();
+    fs::remove_file(&temp_tar_file_path)?;
 
-    let output_name = parse_out_put_name(target_file_name);
+    let output_name = parse_output_name(target_file_name);
     write_file_to_system(&encrypted, &(output_name + ".tar.gz.age"))
-        .expect("Unable to write encrypted data to a file");
 }
 
-fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) {
-    let target_file = fs::read(target_file_name).expect("Unable to read file to encrypt");
+fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
+    let target_file = fs::read(target_file_name)?;
     let decrypted_bytes = decrypt_bytes(target_file, key);
-    // write_file_to_system(&decrypted, "_decrypted.tar.gz")
-    //     .expect("Unable to write encrypted data to a file");
 
     // At this point, decrypted_bytes needs to be decompressed.
     let mut d = GzDecoder::new(&*decrypted_bytes);
     let mut bytes = vec![];
     d.read_to_end(&mut bytes).expect("Error uncompressing file");
-    write_file_to_system(&bytes, "_decrypted.tar")
-        .expect("Unable to write decrypted data to a file");
+    write_file_to_system(&bytes, "_decrypted.tar")?;
 
     // Finally, we untar the file.
-    let file = File::open("_decrypted.tar").unwrap();
+    let file = File::open("_decrypted.tar")?;
     let mut a = Archive::new(file);
 
-    let output_name = parse_out_put_name(target_file_name);
+    fs::remove_file("_decrypted.tar")?;
+
+    let output_name = parse_output_name(target_file_name);
     // https://docs.rs/tar/latest/tar/struct.Archive.html#method.unpack
-    a.unpack(output_name).unwrap();
-    fs::remove_file("_decrypted.tar").unwrap();
+    a.unpack(output_name)
 }
 
 use tar::Builder;
@@ -201,7 +194,7 @@ fn write_file_to_system(data: &[u8], file_name: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-fn parse_out_put_name(target_file_name: &str) -> String {
+fn parse_output_name(target_file_name: &str) -> String {
     let file_name_without_extension = Path::new(target_file_name)
         .file_name()
         .unwrap()
@@ -232,9 +225,9 @@ mod tests {
         let key = read_key_from_file(KEY_FILE);
 
         // Create plain.txt.age
-        encrypt_file(key.clone(), &file_name_to_encrypt);
+        encrypt_file(key.clone(), &file_name_to_encrypt).unwrap();
         // Decrypt plain.txt.age to plain.txt
-        decrypt_file(key, "plain.txt.age");
+        decrypt_file(key, "plain.txt.age").unwrap();
 
         // Now read the contents of the original clear text file...
         let original_contents = fs::read_to_string("test-files/plain.txt")
@@ -280,11 +273,11 @@ mod tests {
         let dir_name_to_encrypt = "test-files/test-dir";
 
         // this should create a `test-dir.tar.age` in WORKING directory
-        encrypt_dir(pubkey, dir_name_to_encrypt);
+        encrypt_dir(pubkey, dir_name_to_encrypt).unwrap();
 
         // this should create a `test-dir` in WORKING directory
         // decrypt_dir(key, &(dir_name_to_encrypt.to_owned() + ".tar.age"));
-        decrypt_dir(key, "test-dir.tar.gz.age");
+        decrypt_dir(key, "test-dir.tar.gz.age").unwrap();
 
         // Finally, here's the test:
         // Read `./test-dir/file.txt` and make sure it includes the plaintext
@@ -300,14 +293,14 @@ mod tests {
     #[test]
     fn can_get_target_output_name() {
         // file
-        assert_eq!(parse_out_put_name("test.txt"), "test");
+        assert_eq!(parse_output_name("test.txt"), "test");
         // directory
-        assert_eq!(parse_out_put_name("foor/bar"), "bar");
+        assert_eq!(parse_output_name("foor/bar"), "bar");
         // longer rel path
-        assert_eq!(parse_out_put_name("foo/bar/test.tar.gz.age"), "test");
+        assert_eq!(parse_output_name("foo/bar/test.tar.gz.age"), "test");
         // Absolute path
         assert_eq!(
-            parse_out_put_name("/home/user/foo/baz/test.tar.gz.age"),
+            parse_output_name("/home/user/foo/baz/test.tar.gz.age"),
             "test"
         );
     }
