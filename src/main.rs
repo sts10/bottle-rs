@@ -4,11 +4,11 @@ use std::path::Path;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-/// bottle: Compress and encrypt (and decrypt and extract files or directories using age, gzip, and tar.
+/// bottle: Compress and encrypt (and decrypt and extract) files or directories using age, gzip, and tar.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "bottle")]
 struct Opt {
-    /// Force overwrite when creating a file
+    /// Force overwrite when creating a file or directory
     #[structopt(short = "f", long = "force")]
     force_overwrite: bool,
 

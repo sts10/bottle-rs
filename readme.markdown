@@ -2,7 +2,7 @@
 
 A Rush command-line tool to compress and encrypt (and decrypt and extract) files or directories using [age](https://github.com/FiloSottile/age), gzip, and tar. 
 
-Bottle has no config options, no flags, and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
+Bottle has no config options, one flag, and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
 
 **This program is currently just a toy. I would not use it for real-world encryption/archiving at this time.** As [the age crate, which this tool uses, warns](https://docs.rs/age/0.7.1/age/index.html), "Caution: all crate versions prior to 1.0 are beta releases for testing purposes only."
 
@@ -19,7 +19,7 @@ Bottle's executable command is `bottle`.
 
 Bottle is hard-coded to use an Age Identity (basically a public/private key-pair) located at `~/.bottle/bottle_key.txt`. If there isn't a file there, Bottle will create one the first time you use Bottle.
 
-Bottle will always create the outputted file or directory **in the current working directory**. It will be named automatically based on the inputted file. If a file or directory with that name already exists, by default Bottle will exit. Users can force an overwrite with the `--force` flag.
+Bottle will always create the outputted file or directory **in the current working directory**. It will be named automatically based on the inputted file. If a file or directory with that name already exists, by default Bottle will exit. Users can force an overwrite with the `--force`/`-f` flag.
 
 - Encrypt a file with `bottle <path/to/file>`
 - Compress and encrypt a directory with `bottle <path/to/directory>`. 
@@ -33,7 +33,7 @@ USAGE:
     bottle [FLAGS] <TARGET>
 
 FLAGS:
-    -f, --force      Force overwrite when creating a file
+    -f, --force      Force overwrite when creating a file or directory
     -h, --help       Prints help information
     -V, --version    Prints version information
 
