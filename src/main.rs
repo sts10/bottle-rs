@@ -27,6 +27,9 @@ fn main() -> std::io::Result<()> {
         }
     };
     let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle_key.txt";
+    // make ~/.bottle directory
+    fs::create_dir_all(home_dir.to_str().unwrap().to_owned() + "/.bottle")?;
+    // Create a key pair if needed
     generate_key_pair_if_none_exists(&key_file_location);
 
     let key = read_key_from_file(&key_file_location);
