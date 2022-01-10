@@ -19,7 +19,7 @@ Bottle's executable command is `bottle`.
 
 Bottle is hard-coded to use an Age Identity (basically a public/private key-pair) located at `~/.bottle/bottle_key.txt`. If there isn't a file there, Bottle will create one the first time you use Bottle.
 
-Bottle will always create the outputted file **in the current working directory**. It will be named automatically based on the inputted file.
+Bottle will always create the outputted file **in the current working directory**. It will be named automatically based on the inputted file. If a file with that name already exists, Bottle will **silently overwrite it**. (Though I'm open to changing this behavior...)
 
 - Encrypt a file with `bottle <path/to/file>`
 - Compress and encrypt a directory with `bottle <path/to/directory>`. 
