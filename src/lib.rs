@@ -21,19 +21,19 @@ pub fn read_key_from_file(file_name: &str) -> age::x25519::Identity {
     }
 }
 
-fn encrypt_bytes(pubkey: age::x25519::Recipient, file_to_encrypt: &[u8]) -> Vec<u8> {
+fn encrypt_bytes(pubkey: age::x25519::Recipient, bytes_to_encrypt: &[u8]) -> Vec<u8> {
     let encryptor = age::Encryptor::with_recipients(vec![Box::new(pubkey)]);
 
-    let mut encrypted = vec![];
-    let mut writer = encryptor.wrap_output(&mut encrypted).unwrap();
-    writer.write_all(file_to_encrypt).unwrap();
+    let mut encrypted_bytes = vec![];
+    let mut writer = encryptor.wrap_output(&mut encrypted_bytes).unwrap();
+    writer.write_all(bytes_to_encrypt).unwrap();
     writer.finish().unwrap();
 
-    encrypted
+    encrypted_bytes
 }
 
-fn decrypt_bytes(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
-    let decryptor = match age::Decryptor::new(&encrypted[..]).unwrap() {
+fn decrypt_bytes(key: age::x25519::Identity, encrypted_bytes: Vec<u8>) -> Vec<u8> {
+    let decryptor = match age::Decryptor::new(&encrypted_bytes[..]).unwrap() {
         age::Decryptor::Recipients(d) => d,
         _ => unreachable!(),
     };
@@ -51,7 +51,7 @@ fn decrypt_bytes(encrypted: Vec<u8>, key: age::x25519::Identity) -> Vec<u8> {
 
 pub fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
-    let encrypted = encrypt_bytes(key.to_public(), &target_file);
+    let encrypted_bytes = encrypt_bytes(key.to_public(), &target_file);
 
     let output_filename = Path::new(target_file_name)
         .file_name()
@@ -59,12 +59,12 @@ pub fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::
         .to_str()
         .unwrap();
     // add the .age extension
-    write_file_to_system(&encrypted, &(output_filename.to_owned() + ".age"))
+    write_file_to_system(&encrypted_bytes, &(output_filename.to_owned() + ".age"))
 }
 
 pub fn decrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
-    let decrypted = decrypt_bytes(target_file, key);
+    let decrypted = decrypt_bytes(key, target_file);
     let output_filename = Path::new(target_file_name)
         .file_stem() // strip the .age extenion
         .unwrap()
@@ -90,18 +90,18 @@ pub fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) -> st
     e.write_all(&tar_file_as_bytes)?;
     let compressed_bytes = e.finish()?;
 
-    let encrypted = encrypt_bytes(pubkey, &compressed_bytes);
+    let encrypted_bytes = encrypt_bytes(pubkey, &compressed_bytes);
 
     // Clean up
     fs::remove_file(&temp_tar_file_path)?;
 
     let output_name = parse_output_name(target_file_name);
-    write_file_to_system(&encrypted, &(output_name + ".tar.gz.age"))
+    write_file_to_system(&encrypted_bytes, &(output_name + ".tar.gz.age"))
 }
 
 pub fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
-    let decrypted_bytes = decrypt_bytes(target_file, key);
+    let decrypted_bytes = decrypt_bytes(key, target_file);
 
     // At this point, decrypted_bytes needs to be decompressed.
     let mut d = GzDecoder::new(&*decrypted_bytes);
@@ -198,10 +198,10 @@ mod tests {
         let pubkey = key.to_public();
 
         // Encrypt the plaintext to a ciphertext...
-        let encrypted = encrypt_bytes(pubkey, &file_to_encrypt);
+        let encrypted_bytes = encrypt_bytes(pubkey, &file_to_encrypt);
 
         // ... and decrypt the obtained ciphertext to the plaintext again.
-        let decrypted = decrypt_bytes(encrypted, key);
+        let decrypted = decrypt_bytes(key, encrypted_bytes);
 
         assert_eq!(decrypted, file_to_encrypt);
     }
