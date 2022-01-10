@@ -19,7 +19,7 @@ Bottle's executable command is `bottle`.
 
 Bottle is hard-coded to use an Age Identity (basically a public/private key-pair) located at `~/.bottle/bottle_key.txt`. If there isn't a file there, Bottle will create one the first time you use Bottle.
 
-Bottle will always create the outputted file **in the current working directory**. It will be named automatically based on the inputted file. If a file with that name already exists, Bottle will **silently overwrite it**. (Though I'm open to changing this behavior...)
+Bottle will always create the outputted file or directory **in the current working directory**. It will be named automatically based on the inputted file. If a file or directory with that name already exists, by default Bottle will exit. Users can force an overwrite with the `--force` flag.
 
 - Encrypt a file with `bottle <path/to/file>`
 - Compress and encrypt a directory with `bottle <path/to/directory>`. 
@@ -30,9 +30,10 @@ Bottle will always create the outputted file **in the current working directory*
 
 ```
 USAGE:
-    bottle <TARGET>
+    bottle [FLAGS] <TARGET>
 
 FLAGS:
+    -f, --force      Force overwrite when creating a file
     -h, --help       Prints help information
     -V, --version    Prints version information
 
@@ -46,7 +47,7 @@ ARGS:
 ## To do
 
 - [X] Add ability to generate a key file for the user. This would eliminate the need to have age and age-keygen installed in order to use Bottle!
-- [ ] Have it be way more cautious when potentially overwriting a file or directory.
+- [X] Have it be way more cautious when potentially overwriting a file or directory.
 - [ ] Ability to encrypt a directory with only access to a public key. (Like `age`'s `-R` flag.)
 - [ ] Ability to print (public) key of key-pair at `~/.bottle/bottle_key.txt`
 - [ ] Consider a flag to add a timestamp to the file name of encrypted files. May aid in overwriting issue.
