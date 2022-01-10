@@ -1,22 +1,18 @@
-// use flate2::read::GzDecoder;
-// use flate2::write::GzEncoder;
-// use flate2::Compression;
+use bottle::*;
 use std::fs;
-// use std::fs::File;
-// use std::io::prelude::*;
-// use std::io::{Read, Write};
-// use std::iter;
 use std::path::Path;
 use std::path::PathBuf;
-// use tar::Archive;
-use bottle::*;
 use structopt::StructOpt;
 
 /// bottle: Compress and encrypt (and decrypt and extract files or directories using age, gzip, and tar.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "bottle")]
 struct Opt {
-    /// Target file or directory to either encrypt or decrypt.
+    /// File or directory to either encrypt or decrypt.
+    /// If given a directory, will tar, then gzip (compress), then encrypt, creating a file with
+    /// the extension .tar.gz.age.
+    /// If given a .tar.gz.age file, will decrypt and extract contents.
+    /// All outputted files are placed in the current working directory.
     #[structopt(name = "TARGET", parse(from_os_str))]
     target_file: PathBuf,
 }
