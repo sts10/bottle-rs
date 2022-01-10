@@ -51,4 +51,5 @@ ARGS:
 - [ ] Have it be way more cautious when potentially overwriting a file or directory.
 - [ ] Ability to print (public) key of key-pair at `~/.bottle/bottle_key.txt`
 - [ ] Consider an option NOT to compress directory before encrypting it. Would need to be able to unbottle .tar.age files.
+- [ ] Consider a flag to add a timestamp to the name of encrypted files. May aid in overwriting issue.
 - [ ] An option to use your ssh key instead ([which age supports](https://github.com/FiloSottile/age#ssh-keys))
