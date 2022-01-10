@@ -21,6 +21,13 @@ struct Opt {
     target_file: PathBuf,
 }
 
+enum Action {
+    EncryptFile,
+    DecryptFile,
+    EncryptDir,
+    DecryptDir,
+}
+
 fn main() -> std::io::Result<()> {
     // Set up hard-coded key
     // Use the home crate to get user's $HOME directory
@@ -31,7 +38,7 @@ fn main() -> std::io::Result<()> {
         }
     };
     let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle_key.txt";
-    // make ~/.bottle directory
+    // make ~/.bottle directory if needed
     fs::create_dir_all(home_dir.to_str().unwrap().to_owned() + "/.bottle")?;
     // Create a key pair if needed
     generate_key_pair_if_none_exists(&key_file_location);
@@ -43,29 +50,35 @@ fn main() -> std::io::Result<()> {
     // I'm sure we can do this better...
     let target_file_name = opt.target_file.to_str().unwrap();
 
+    // Gather some data we'll need to determine what action
+    // to take
     let metadata = fs::metadata(target_file_name)?;
     let is_dir = metadata.file_type().is_dir();
+    let extension = Path::new(target_file_name).extension().unwrap().to_str();
 
-    if is_dir {
+    // Using the target_file_name, determine what action to take
+    let action_to_take: Action = if is_dir {
         // Given a directory. We need to tar it, gzip it, then encrypt it
-        encrypt_dir(pubkey, target_file_name, opt.force_overwrite)
+        Action::EncryptDir
     } else if target_file_name.ends_with(".tar.gz.age") {
-        // If it's an encrypted and tar'd file...
-        decrypt_dir(key, target_file_name, opt.force_overwrite)
+        // If it's an encrypted, gzipped, and tar'd file...
+        // assume it's a "bottle" directory we want to decrypt
+        // and extract
+        Action::DecryptDir
+    } else if extension == Some("age") {
+        // If extension is age, we assume it's an encrypted age file
+        // that user wants to decrypt
+        Action::DecryptFile
     } else {
-        // If we're here that means we were given a file.
-        // Let's find the extension of the file so we know what
-        // to do with it.
-        let extension = Path::new(target_file_name).extension().unwrap().to_str();
+        // Else, it's a regular, unencrypted file user
+        // wants to encrypt with age key
+        Action::EncryptFile
+    };
 
-        if extension == Some("age") {
-            // If extension is age, we assume it's an encrypted age file
-            // that user wants to decrypt
-            decrypt_file(key, target_file_name, opt.force_overwrite)
-        } else {
-            // Else, it's a regular, unencrypted file user
-            // wants to encrypt with age key
-            encrypt_file(key, target_file_name, opt.force_overwrite)
-        }
+    match action_to_take {
+        Action::EncryptDir => encrypt_dir(pubkey, target_file_name, opt.force_overwrite),
+        Action::DecryptDir => decrypt_dir(key, target_file_name, opt.force_overwrite),
+        Action::EncryptFile => encrypt_file(key, target_file_name, opt.force_overwrite),
+        Action::DecryptFile => decrypt_file(key, target_file_name, opt.force_overwrite),
     }
 }
