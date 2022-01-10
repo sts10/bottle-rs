@@ -11,9 +11,9 @@ mod integration_tests {
         let key = read_key_from_file(KEY_FILE);
 
         // Create plain.txt.age
-        encrypt_file(key.clone(), &file_name_to_encrypt, true).unwrap();
+        encrypt_file(key.clone(), &file_name_to_encrypt).unwrap();
         // Decrypt plain.txt.age to plain.txt
-        decrypt_file(key, "plain.txt.age", true).unwrap();
+        decrypt_file(key, "plain.txt.age").unwrap();
 
         // Now read the contents of the original clear text file...
         let original_contents = fs::read_to_string("tests/test-files/plain.txt")
@@ -59,11 +59,11 @@ mod integration_tests {
         let dir_name_to_encrypt = "tests/test-files/test-dir";
 
         // this should create a `test-dir.tar.age` in WORKING directory
-        encrypt_dir(pubkey, dir_name_to_encrypt, true).unwrap();
+        encrypt_dir(pubkey, dir_name_to_encrypt).unwrap();
 
         // this should create a `test-dir` in WORKING directory
         // decrypt_dir(key, &(dir_name_to_encrypt.to_owned() + ".tar.age"));
-        decrypt_dir(key, "test-dir.tar.gz.age", true).unwrap();
+        decrypt_dir(key, "test-dir.tar.gz.age").unwrap();
 
         // Finally, here's the test:
         // Read `./test-dir/file.txt` and make sure it includes the plaintext

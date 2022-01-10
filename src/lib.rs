@@ -4,6 +4,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs;
 use std::fs::File;
+// use std::io::{Error, ErrorKind};
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::iter;
@@ -85,11 +86,7 @@ pub fn decrypt_bytes(key: age::x25519::Identity, encrypted_bytes: Vec<u8>) -> Ve
     decrypted
 }
 
-pub fn encrypt_file(
-    key: age::x25519::Identity,
-    target_file_name: &str,
-    force_overwrite: bool,
-) -> std::io::Result<()> {
+pub fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
     let output_filename = Path::new(target_file_name)
         .file_name()
@@ -97,47 +94,28 @@ pub fn encrypt_file(
         .to_str()
         .unwrap()
         .to_owned()
-        + ".age";
-    if !force_overwrite {
-        panic_if_file_exists(&output_filename);
-    }
+        + ".age"; // add the .age extension
 
     let encrypted_bytes = encrypt_bytes(key.to_public(), &target_file);
 
-    // add the .age extension
-    write_file_to_system(&encrypted_bytes, &output_filename, force_overwrite)
+    write_file_to_system(&encrypted_bytes, &output_filename)
 }
 
-pub fn decrypt_file(
-    key: age::x25519::Identity,
-    target_file_name: &str,
-    force_overwrite: bool,
-) -> std::io::Result<()> {
+pub fn decrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
     let output_filename = Path::new(target_file_name)
         .file_stem() // strip the .age extenion
         .unwrap()
         .to_str()
         .unwrap();
-    if !force_overwrite {
-        panic_if_file_exists(output_filename);
-    }
 
     let target_file = fs::read(target_file_name)?;
     let decrypted = decrypt_bytes(key, target_file);
 
-    write_file_to_system(&decrypted, output_filename, force_overwrite)
+    write_file_to_system(&decrypted, output_filename)
 }
 
-pub fn encrypt_dir(
-    pubkey: age::x25519::Recipient,
-    target_file_name: &str,
-    force_overwrite: bool,
-) -> std::io::Result<()> {
+pub fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) -> std::io::Result<()> {
     let output_name = parse_output_name(target_file_name) + ".tar.gz.age";
-    if !force_overwrite {
-        panic_if_file_exists(&output_name);
-    }
-
     // Writing a plaintext tar file to the file system is a potential security issue.
     // But at least this temporary tar file is created in the same
     // directory as the directory that we're bottling, NOT in the current
@@ -158,18 +136,11 @@ pub fn encrypt_dir(
     // Clean up
     fs::remove_file(&temp_tar_file_path)?;
 
-    write_file_to_system(&encrypted_bytes, &output_name, force_overwrite)
+    write_file_to_system(&encrypted_bytes, &output_name)
 }
 
-pub fn decrypt_dir(
-    key: age::x25519::Identity,
-    target_file_name: &str,
-    force_overwrite: bool,
-) -> std::io::Result<()> {
+pub fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
     let output_name = parse_output_name(target_file_name);
-    if !force_overwrite {
-        panic_if_file_exists(&output_name);
-    }
 
     let target_file = fs::read(target_file_name)?;
     let decrypted_bytes = decrypt_bytes(key, target_file);
@@ -178,7 +149,7 @@ pub fn decrypt_dir(
     let mut d = GzDecoder::new(&*decrypted_bytes);
     let mut bytes = vec![];
     d.read_to_end(&mut bytes).expect("Error uncompressing file");
-    write_file_to_system(&bytes, "_decrypted.tar", true)?;
+    write_file_to_system(&bytes, "_decrypted.tar")?;
 
     // Finally, we untar the file.
     let file = File::open("_decrypted.tar")?;
@@ -202,25 +173,18 @@ fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Erro
     a.finish()
 }
 
-fn write_file_to_system(
-    data: &[u8],
-    file_name: &str,
-    force_overwrite: bool,
-) -> std::io::Result<()> {
-    if !force_overwrite {
-        panic_if_file_exists(file_name);
-    }
+fn write_file_to_system(data: &[u8], file_name: &str) -> std::io::Result<()> {
     let mut file = File::create(file_name)?;
     file.write_all(data)?;
     Ok(())
 }
 
-fn panic_if_file_exists(file_name: &str) {
-    if Path::new(file_name).exists() {
-        // panic! probably isn't right here...
-        panic!("File exists. Use --force flag to overwrite");
-    }
-}
+// fn panic_if_file_exists(file_name: &str) {
+//     if Path::new(file_name).exists() {
+//         // panic! probably isn't right here...
+//         panic!("File exists. Use --force flag to overwrite");
+//     }
+// }
 
 pub fn parse_output_name(target_file_name: &str) -> String {
     let file_name_without_extension = Path::new(target_file_name)
@@ -234,7 +198,7 @@ pub fn parse_output_name(target_file_name: &str) -> String {
 
 /// Splits a string slice (`&str`) by another string
 /// slice and get a vector back.
-fn split_and_vectorize<'a>(string_to_split: &'a str, splitter: &str) -> Vec<&'a str> {
+pub fn split_and_vectorize<'a>(string_to_split: &'a str, splitter: &str) -> Vec<&'a str> {
     // let split = string_to_split.split(splitter);
     // split.collect::<Vec<&str>>()
     string_to_split.split(splitter).collect()
