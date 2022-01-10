@@ -86,7 +86,7 @@ pub fn decrypt_bytes(key: age::x25519::Identity, encrypted_bytes: Vec<u8>) -> Ve
     decrypted
 }
 
-pub fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
+pub fn encrypt_file(pubkey: age::x25519::Recipient, target_file_name: &str) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
     let output_filename = Path::new(target_file_name)
         .file_name()
@@ -96,7 +96,7 @@ pub fn encrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::
         .to_owned()
         + ".age"; // add the .age extension
 
-    let encrypted_bytes = encrypt_bytes(key.to_public(), &target_file);
+    let encrypted_bytes = encrypt_bytes(pubkey, &target_file);
 
     write_file_to_system(&encrypted_bytes, &output_filename)
 }

@@ -88,7 +88,7 @@ fn main() -> std::io::Result<()> {
         match action_to_take {
             Action::EncryptDir => encrypt_dir(pubkey, target_file_name),
             Action::DecryptDir => decrypt_dir(key, target_file_name),
-            Action::EncryptFile => encrypt_file(key, target_file_name),
+            Action::EncryptFile => encrypt_file(pubkey, target_file_name),
             Action::DecryptFile => decrypt_file(key, target_file_name),
         }
     }

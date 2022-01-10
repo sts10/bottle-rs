@@ -11,7 +11,7 @@ mod integration_tests {
         let key = read_key_from_file(KEY_FILE);
 
         // Create plain.txt.age
-        encrypt_file(key.clone(), &file_name_to_encrypt).unwrap();
+        encrypt_file(key.to_public(), &file_name_to_encrypt).unwrap();
         // Decrypt plain.txt.age to plain.txt
         decrypt_file(key, "plain.txt.age").unwrap();
 
