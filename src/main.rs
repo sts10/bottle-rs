@@ -31,20 +31,7 @@ enum Action {
 
 fn main() -> std::io::Result<()> {
     // Set up hard-coded key
-    // Use the home crate to get user's $HOME directory
-    let home_dir = match home::home_dir() {
-        Some(path) => path,
-        None => {
-            panic!("Unable to find your HOME directory, and thus can not locate age key-pair file. Exiting.")
-        }
-    };
-    let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle_key.txt";
-    // make ~/.bottle directory if needed
-    fs::create_dir_all(home_dir.to_str().unwrap().to_owned() + "/.bottle")?;
-    // Create a key pair if needed
-    generate_key_pair_if_none_exists(&key_file_location);
-
-    let key = read_key_from_file(&key_file_location);
+    let key = find_or_generate_age_identity()?;
     let pubkey = key.to_public();
 
     let opt = Opt::from_args();
@@ -133,4 +120,21 @@ fn output_file_exists(target_file_name: &str, action_to_take: &Action) -> bool {
         Action::DecryptFile => Path::new(&target_file_name_minus_first_extension).exists(),
         Action::DecryptDir => Path::new(&file_name_without_extensions).exists(),
     }
+}
+
+fn find_or_generate_age_identity() -> std::io::Result<age::x25519::Identity> {
+    // Use the home crate to get user's $HOME directory
+    let home_dir = match home::home_dir() {
+        Some(path) => path,
+        None => {
+            panic!("Unable to find your HOME directory, and thus can not locate age key-pair file. Exiting.")
+        }
+    };
+    let key_file_location = home_dir.to_str().unwrap().to_owned() + "/.bottle/bottle_key.txt";
+    // make ~/.bottle directory if needed
+    fs::create_dir_all(home_dir.to_str().unwrap().to_owned() + "/.bottle")?;
+    // Create a key pair if needed
+    generate_key_pair_if_none_exists(&key_file_location);
+
+    Ok(read_key_from_file(&key_file_location))
 }
