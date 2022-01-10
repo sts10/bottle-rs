@@ -4,7 +4,7 @@ A Rush command-line tool to compress and encrypt (and decrypt and extract) files
 
 Bottle has no config options, no flags, and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
 
-**This program is currently just a toy. I would not use it for real-world encryption/archiving at this time.**
+**This program is currently just a toy. I would not use it for real-world encryption/archiving at this time.** As [the age crate, which this tool uses, warns](https://docs.rs/age/0.7.1/age/index.html), "Caution: all crate versions prior to 1.0 are beta releases for testing purposes only."
 
 ## Install
 
