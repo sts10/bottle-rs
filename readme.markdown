@@ -10,13 +10,14 @@ Bottle has no config options, no flags, and only takes a single parameter, in an
 
 1. [Install Rust](https://www.rust-lang.org/tools/install), if you haven't already. Recommend version 1.57+.
 2. Install Bottle by running: `cargo install --git https://github.com/sts10/bottle-rs --branch main`
-Optional: [Install age](https://github.com/FiloSottile/age#installation). Probably best to use age version 1.0+. 
+
+Optional: While Bottle does not require [age](https://github.com/FiloSottile/age#installation) to be installed, you may want to have it handy. Probably best to use age version 1.0+ when interacting with bottled files. 
 
 Bottle's executable command is `bottle`.
 
 ## Usage 
 
-Bottle is hard-coded to use an Age Identity located at `~/.bottle/bottle_key.txt`. If there isn't a file there, Bottle will create one the first time you use Bottle.
+Bottle is hard-coded to use an Age Identity (basically a public/private key-pair) located at `~/.bottle/bottle_key.txt`. If there isn't a file there, Bottle will create one the first time you use Bottle.
 
 Bottle will always create the outputted file **in the current working directory**. It will be named automatically based on the inputted file.
 
