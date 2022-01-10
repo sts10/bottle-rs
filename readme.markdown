@@ -50,6 +50,7 @@ ARGS:
 
 ## To do
 
+- [ ] Add ability to generate a key file for the user. This would eliminate the need to have age and age-keygen installed in order to use Bottle!
 - [ ] Have it be way more cautious when potentially overwriting a file or directory.
 - [ ] Ability to encrypt a directory with only access to a public key. (Like `age`'s `-R` flag.)
 - [ ] Ability to print (public) key of key-pair at `~/.bottle/bottle_key.txt`
