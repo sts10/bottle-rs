@@ -56,3 +56,4 @@ ARGS:
 - [ ] Consider an option NOT to compress directory before encrypting it. Would need to be able to unbottle .tar.age files.
 - [ ] Consider a flag to add a timestamp to the file name of encrypted files. May aid in overwriting issue.
 - [ ] An option to use your ssh key instead ([which age supports](https://github.com/FiloSottile/age#ssh-keys))
+- [ ] Might be neat if could read file from [stdin](https://doc.rust-lang.org/std/io/struct.Stdin.html) and/or output to stdout, so could be used in a shell-command chain.
