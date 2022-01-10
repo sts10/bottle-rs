@@ -24,10 +24,12 @@ pub fn generate_key_pair_if_none_exists(key_file_path: &str) {
 }
 
 fn generate_key_pair_to_file(key_file_path: &str) {
+    // Adapted from rage-keygen tool:
+    // https://github.com/str4d/rage/blob/main/rage/src/bin/rage-keygen/main.rs#L87-L94
     let sk = age::x25519::Identity::generate();
     let pk = sk.to_public();
-
     eprintln!("Public key: {}", pk);
+
     let mut f = OpenOptions::new()
         .write(true)
         .create(true)
