@@ -204,28 +204,3 @@ fn write_file_to_system(data: &[u8], file_name: &str) -> std::io::Result<()> {
     file.write_all(data)?;
     Ok(())
 }
-
-// fn panic_if_file_exists(file_name: &str) {
-//     if Path::new(file_name).exists() {
-//         // panic! probably isn't right here...
-//         panic!("File exists. Use --force flag to overwrite");
-//     }
-// }
-
-pub fn parse_output_name(target_file_name: &str) -> String {
-    let file_name_without_extension = Path::new(target_file_name)
-        .file_name()
-        .unwrap()
-        .to_str()
-        .unwrap();
-    let file_name_without_extension = split_and_vectorize(file_name_without_extension, ".")[0];
-    file_name_without_extension.to_string()
-}
-
-/// Splits a string slice (`&str`) by another string
-/// slice and get a vector back.
-pub fn split_and_vectorize<'a>(string_to_split: &'a str, splitter: &str) -> Vec<&'a str> {
-    // let split = string_to_split.split(splitter);
-    // split.collect::<Vec<&str>>()
-    string_to_split.split(splitter).collect()
-}
