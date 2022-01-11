@@ -102,8 +102,9 @@ fn take_action(
             // If we're here, that means that file already exists, and user didn't give the
             // --force flag.
             eprintln!("This command would overwrite existing file {}. To do this, re-run with --force flag", output_file_name);
-            // Err(ErrorKind::AlreadyExists)
-            return Err(Error::new(ErrorKind::Other, "File exists"));
+            Err(AlreadyExists)
+            // Err(std::io::Error::ErrorKind::AlreadyExists)
+            // return Err(Error::new(ErrorKind::Other, "File exists"));
         } else {
             eprintln!("This command would overwrite an existing directory {}. To do this, re-run with --force flag", output_file_name);
             // Err(ErrorKind::AlreadyExists)
