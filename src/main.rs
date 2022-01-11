@@ -13,6 +13,11 @@ struct Opt {
     #[structopt(short = "f", long = "force")]
     force_overwrite: bool,
 
+    /// If encrypting a file or directory, add a timestamp to the end of filename of the resulting,
+    /// encrypted file
+    #[structopt(short = "t", long = "time-stamp")]
+    timestamp: bool,
+
     /// File or directory to either encrypt or decrypt.
     /// If given a directory, will tar, then gzip (compress), then encrypt, creating a file with
     /// the extension .tar.gz.age.
@@ -67,7 +72,8 @@ fn main() -> std::io::Result<()> {
         Action::EncryptFile
     };
 
-    let output_file_name = determine_output_file_name(target_file_name, &action_to_take);
+    let output_file_name =
+        determine_output_file_name(target_file_name, &action_to_take, opt.timestamp);
 
     if !opt.force_overwrite && Path::new(&output_file_name).exists() {
         if is_dir {
@@ -96,7 +102,11 @@ fn main() -> std::io::Result<()> {
     }
 }
 
-fn determine_output_file_name(target_file_name: &str, action_to_take: &Action) -> String {
+fn determine_output_file_name(
+    target_file_name: &str,
+    action_to_take: &Action,
+    add_timestamp: bool,
+) -> String {
     let target_file_name_as_string = Path::new(target_file_name)
         .file_name()
         .unwrap()
@@ -113,9 +123,18 @@ fn determine_output_file_name(target_file_name: &str, action_to_take: &Action) -
     let file_name_without_extensions =
         split_and_vectorize(&target_file_name_as_string, ".")[0].to_string();
 
+    let timestamp = if add_timestamp {
+        "__bottled_".to_owned()
+            + &chrono::Local::now()
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+                .replace(":", "_")
+    } else {
+        "".to_string()
+    };
+
     match action_to_take {
-        Action::EncryptFile => target_file_name_as_string + ".age",
-        Action::EncryptDir => target_file_name_as_string + ".tar.gz.age",
+        Action::EncryptFile => target_file_name_as_string + &timestamp + ".age",
+        Action::EncryptDir => target_file_name_as_string + &timestamp + ".tar.gz.age",
         Action::DecryptFile => target_file_name_minus_first_extension.to_string(),
         Action::DecryptDir => file_name_without_extensions,
     }
