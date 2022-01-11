@@ -114,39 +114,42 @@ pub fn encrypt_dir(
     target_file_name: &str,
     output_filename: &str,
 ) -> std::io::Result<()> {
-    // Writing a plaintext tar file to the file system is a potential security issue.
-    // But at least this temporary tar file is created in the same
-    // directory as the directory that we're bottling, NOT in the current
-    // working directory, which user likely does NOT
+    // In order to encrypt a directory, Bottle tar's it first.
+    // One question/issue with this is that the tar file (which is not yet encrypted)
+    // has to live somewhere on the file system, however briefly. I think this is
+    // a potential security issue.
+    // In an attempt to mitigate this threat, Bottle creates this temporary tar
+    // file in the parent directory of the directory that we're bottling,
+    // NOT in the current working directory, which user likely does NOT
     // want an unencrypted tar file to exists, even momentarily.
-
-    // let temp_tar_file_path =
-    //     "/tmp/".to_owned() + "_" + target_file_name + "_tarfile_created_by_bottle.tar";
-    // Or go one dir up...
     let temp_tar_file_path = compose_path_for_temp_tar_file(target_file_name, output_filename);
 
     make_tar_from_dir(target_file_name, &temp_tar_file_path)
         .expect("Unable to make tar from given directory");
 
-    // Read this newly created tarfile into memory
+    // Read this newly created tarfile into memory...
     let tar_file_as_bytes = fs::read(&temp_tar_file_path)?;
-    // Immediately remove temp tar file
+    // And then immediately remove temp tar file
     fs::remove_file(&temp_tar_file_path)?;
 
-    // Now we compress the temp_tar_file_path with gzip
+    // Now we compress the bytes of the tar file with gzip
     let mut e = GzEncoder::new(Vec::new(), Compression::default());
     e.write_all(&tar_file_as_bytes)?;
     let compressed_bytes = e.finish()?;
 
+    // Then we encrypt these compressed bytes with the age public key
+    // we received.
     let encrypted_bytes = encrypt_bytes(pubkey, &compressed_bytes);
 
+    // And finally write it to the file system
     write_file_to_system(&encrypted_bytes, &output_filename)
 }
 
 fn compose_path_for_temp_tar_file(target_file_name: &str, output_filename: &str) -> String {
-    // Put our temp tarfile in the parent directory
+    // For security reasons (see comment above) , we want to put our temp
+    // tarfile in the parent directory of the directory we're bottling.
+    // A possible alternative approach would be to put it in "/tmp/"?
     Path::new(target_file_name)
-        // .file_name()
         .parent()
         .expect("Must have access to parent directory")
         .to_str()
@@ -155,7 +158,6 @@ fn compose_path_for_temp_tar_file(target_file_name: &str, output_filename: &str)
         + "/_tarfile_created_by_bottle_for_"
         + &output_filename.replace(".", "_")
         + ".tar"
-    // alt approach: "/tmp/"
 }
 
 pub fn decrypt_dir(
