@@ -108,6 +108,7 @@ fn main() -> std::io::Result<()> {
 /// Using the user's input, and having determined which action the user wants us to take, this
 /// function determines what we should name the outputted file. Since it's always created in the
 /// current working directory, the _path_ of the outputted directory isn't super relevant.
+// I don't like how this function is laid out...
 fn determine_output_file_name(
     target_file_name: &str,
     action_to_take: &Action,
@@ -126,8 +127,10 @@ fn determine_output_file_name(
         .to_str()
         .unwrap();
 
-    let file_name_without_extensions =
-        split_and_vectorize(&target_file_name_as_string, ".")[0].to_string();
+    // Not sure how to do this in a better way
+    let file_name_without_tar_gz_age_extensions = target_file_name_as_string.trim()
+        [0..target_file_name_as_string.trim().len() - 11]
+        .to_string();
 
     let timestamp = if add_timestamp {
         "__bottled_".to_owned()
@@ -135,6 +138,7 @@ fn determine_output_file_name(
                 .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
                 .replace(":", "_")
     } else {
+        // This seems sloppy...
         "".to_string()
     };
 
@@ -142,7 +146,7 @@ fn determine_output_file_name(
         Action::EncryptFile => target_file_name_as_string + &timestamp + ".age",
         Action::EncryptDir => target_file_name_as_string + &timestamp + ".tar.gz.age",
         Action::DecryptFile => target_file_name_minus_first_extension.to_string(),
-        Action::DecryptDir => file_name_without_extensions,
+        Action::DecryptDir => file_name_without_tar_gz_age_extensions,
     }
 }
 
