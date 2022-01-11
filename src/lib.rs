@@ -156,7 +156,7 @@ fn compose_path_for_temp_tar_file(target_file_name: &str, output_filename: &str)
         .unwrap()
         .to_owned()
         + "/_tarfile_created_by_bottle_for_"
-        + &output_filename.replace(".", "_")
+        + &output_filename.replace(".", "-").replace("/", "_")
         + ".tar"
 }
 
@@ -187,7 +187,7 @@ pub fn decrypt_dir(
 fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Error> {
     let file = match File::create(tar_name) {
         Ok(file) => file,
-        Err(e) => panic!("Error making tar from dir: {}", e),
+        Err(e) => panic!("Error making tar from dir at {}\nError msg:{}", tar_name, e),
     };
     let mut a = Builder::new(file);
 
