@@ -101,14 +101,13 @@ fn take_action(
             // If given a directory, that means Bottle is being asked to make a file.
             // If we're here, that means that file already exists, and user didn't give the
             // --force flag.
+            // Note: I'm not sure if this is the best way to inform user of the situation/error.
             eprintln!("This command would overwrite existing file {}. To do this, re-run with --force flag", output_file_name);
-            Err(AlreadyExists)
-            // Err(std::io::Error::ErrorKind::AlreadyExists)
             // return Err(Error::new(ErrorKind::Other, "File exists"));
+            return Err(Error::new(ErrorKind::AlreadyExists, "File exists"));
         } else {
             eprintln!("This command would overwrite an existing directory {}. To do this, re-run with --force flag", output_file_name);
-            // Err(ErrorKind::AlreadyExists)
-            return Err(Error::new(ErrorKind::Other, "Directory exists"));
+            return Err(Error::new(ErrorKind::AlreadyExists, "Directory exists"));
         }
     } else {
         // If we're here, we know we don't need to worry about the output file
