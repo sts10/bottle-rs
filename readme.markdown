@@ -79,7 +79,15 @@ If you'd like Bottle to timestamp your encrypted files, just add a `-t` flag whe
 
 ### Multiple targets
 
-Bottle can even encrypt multiple files and directories with one command: `bottle file1.txt directory2` will create `file1.txt.age` and `directory2.tar.gz.age`. Note that for each target given, Bottle will create completely separate encrypted files. This is different than how the `tar` command works.
+Bottle can even encrypt multiple files and directories with one command: `bottle file1.txt directory2` will create `file1.txt.age` and `directory2.tar.gz.age`. Note that for each target given, Bottle will create completely separate encrypted files. 
+
+Notably, this is different than how the `tar` command works, which would group all given files into a single archive. If you want Bottle to put multiple files or directories into one "bottle", first put them all in a single directory, then run `bottle` on that directory.
+
+## Non-goals of the project (and recommended tools)
+
+Bottle is not, at this point, aiming to be a tool for backing-up your entire HOME directory, or even a multi-gigabyte `code` or `Documents` or `Pictures` directory. For large, repeated back-ups like that, I'd recommend [Restic](https://restic.net/), which I [use myself](https://sts10.github.io/2021/10/26/restic-rsync-backup-ideas.html).
+
+And while this may sound obvious, Bottle is not a re-write of the `age` or [`rage`](https://github.com/str4d/rage) command-line tools. If you want to encrypt files for other people, use [age](https://github.com/FiloSottile/age)!
 
 ## To do
 
