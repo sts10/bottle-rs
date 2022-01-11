@@ -47,12 +47,21 @@ fn main() -> std::io::Result<()> {
 
         // Take appropriate action on this target_file,
         // depending on it being a directory or on its file extension
-        take_action(
+        match take_action(
             target_file_name,
             key.clone(),
             opt.timestamp,
             opt.force_overwrite,
-        )?;
+        ) {
+            // If file or directory that Bottle would create already exists
+            // (and we didn't receive a --force flag), print that warning.
+            Err(ref e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                eprintln!("{}", e)
+            }
+            // For all other types of errors...
+            Err(e) => panic!("Error: {}", e),
+            Ok(()) => (),
+        };
     }
     Ok(())
 }
@@ -102,12 +111,16 @@ fn take_action(
             // If we're here, that means that file already exists, and user didn't give the
             // --force flag.
             // Note: I'm not sure if this is the best way to inform user of the situation/error.
-            eprintln!("This command would overwrite existing file {}. To do this, re-run with --force flag", output_file_name);
-            // return Err(Error::new(ErrorKind::Other, "File exists"));
-            return Err(Error::new(ErrorKind::AlreadyExists, "File exists"));
+            // eprintln!("This command would overwrite existing file {}. To do this, re-run with --force flag", output_file_name);
+            // return Err(Error::new(ErrorKind::AlreadyExists, "File exists"));
+            let error_message = format!("Warning: This command would overwrite existing file {}. To do this, re-run with --force flag.", output_file_name);
+            Err(Error::new(ErrorKind::AlreadyExists, error_message))
         } else {
-            eprintln!("This command would overwrite an existing directory {}. To do this, re-run with --force flag", output_file_name);
-            return Err(Error::new(ErrorKind::AlreadyExists, "Directory exists"));
+            // eprintln!("This command would overwrite an existing directory {}. To do this, re-run with --force flag.", output_file_name);
+            // return Err(Error::new(ErrorKind::AlreadyExists, "Directory exists"));
+
+            let error_message = format!("Warning: This command would overwrite existing directory {}. To do this, re-run with --force flag.", output_file_name);
+            Err(Error::new(ErrorKind::AlreadyExists, error_message))
         }
     } else {
         // If we're here, we know we don't need to worry about the output file
