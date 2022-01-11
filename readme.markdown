@@ -83,6 +83,17 @@ Bottle can even encrypt multiple files and directories with one command: `bottle
 
 Notably, this is different than how the `tar` command works, which would group all given files into a single archive. If you want Bottle to put multiple files or directories into one "bottle", first put them all in a single directory, then run `bottle` on that directory.
 
+## Troubleshooting
+
+If you have a `.tar.gz.age` file that you encrypted with Bottle, but now you can't install or get the `bottle` tool to work, fear not!
+
+With [age installed](https://github.com/FiloSottile/age#installation), try the following two commands to decrypt and extract your archive file:
+
+```bash
+age --decrypt -i ~/.bottle/bottle_key.txt my_archive.tar.gz.age > compressed_decrypted_archive.tar.gz
+tar -xzf compressed_decrypted_archive.tar.gz
+```
+
 ## Non-goals of the project (and recommended tools)
 
 Bottle is not, at this point, aiming to be a tool for backing-up your entire HOME directory, or even a multi-gigabyte `code` or `Documents` or `Pictures` directory. For large, repeated back-ups like that, I'd recommend [Restic](https://restic.net/), which I [use myself](https://sts10.github.io/2021/10/26/restic-rsync-backup-ideas.html).
