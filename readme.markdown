@@ -101,6 +101,10 @@ Bottle is not, at this point, aiming to be a tool for backing-up your entire HOM
 
 And while this may sound obvious, Bottle is not a re-write of the `age` or [`rage`](https://github.com/str4d/rage) command-line tools. If you want to encrypt files for other people, use [age](https://github.com/FiloSottile/age)!
 
+## Other notes
+
+This project is not affiliated with the similarly named [bitbottle](https://code.lag.net/robey/bitbottle) project, nor are the archive file formats compatible, to my knowledge. Sorry about the name conflict... open an issue if you have a suggestion for a new name for this project!
+
 ## To do
 
 - [X] Add ability to generate a key file for the user. This would eliminate the need to have age and age-keygen installed in order to use Bottle!
