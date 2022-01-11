@@ -2,7 +2,7 @@
 
 A Rush command-line tool to compress and encrypt (and decrypt and extract) files or directories using [age](https://github.com/FiloSottile/age), gzip, and tar. 
 
-Bottle has no config options, one flag, and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
+Bottle has no config options, optionally accepts two (simple) flags, and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
 
 **This program is currently just a toy. I would not use it for real-world encryption/archiving at this time.** As [the age crate, which this tool uses, warns](https://docs.rs/age/0.7.1/age/index.html), "Caution: all crate versions prior to 1.0 are beta releases for testing purposes only."
 
@@ -37,9 +37,12 @@ USAGE:
     bottle [FLAGS] <TARGET>
 
 FLAGS:
-    -f, --force      Force overwrite when creating a file or directory
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+    -f, --force         Force overwrite when creating a file or directory
+    -h, --help          Prints help information
+    -t, --time-stamp    If encrypting a file or directory, add a timestamp to the end of filename (but before file
+                        extensions) of the resulting, encrypted file. Format is rfc3339, with colons replaced with
+                        underscores. If decrypting a file, this flag is effectively ignored
+    -V, --version       Prints version information
 
 ARGS:
     <TARGET>    File or directory to either encrypt or decrypt. If given a directory, will tar, then gzip
@@ -52,9 +55,9 @@ ARGS:
 
 - [X] Add ability to generate a key file for the user. This would eliminate the need to have age and age-keygen installed in order to use Bottle!
 - [X] Have it be way more cautious when potentially overwriting a file or directory.
+- [X] Consider a flag to add a timestamp to the file name of encrypted files.
 - [ ] Ability to encrypt a directory with only access to a public key. (Like `age`'s `-R` flag.)
 - [ ] Ability to print (public) key of key-pair at `~/.bottle/bottle_key.txt`
-- [ ] Consider a flag to add a timestamp to the file name of encrypted files.
 - [ ] Consider adding an option to NOT to compress directory before encrypting it. Would need to be able to unbottle .tar.age files.
 - [ ] An option to use your ssh key instead ([which age supports](https://github.com/FiloSottile/age#ssh-keys))
 - [ ] Might be neat if could read file from [stdin](https://doc.rust-lang.org/std/io/struct.Stdin.html) and/or output to stdout, so could be used in a shell-command chain.

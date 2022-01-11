@@ -13,8 +13,9 @@ struct Opt {
     #[structopt(short = "f", long = "force")]
     force_overwrite: bool,
 
-    /// If encrypting a file or directory, add a timestamp to the end of filename of the resulting,
-    /// encrypted file
+    /// If encrypting a file or directory, add a timestamp to the end of filename (but before file
+    /// extensions) of the resulting, encrypted file. Format is rfc3339, with colons replaced with
+    /// underscores. If decrypting a file, this flag is effectively ignored.
     #[structopt(short = "t", long = "time-stamp")]
     timestamp: bool,
 
@@ -90,9 +91,11 @@ fn main() -> std::io::Result<()> {
         }
     } else {
         // If we're here, we know we don't need to worry about the output file
-        // overwriting an existing file. Either there isn't a file at the path we're
-        // going to use OR the user has used the --force flag and we don't care if
-        // we overwrite it.
+        // overwriting an existing file. Either there isn't a file or directory at
+        // the path we're going to use OR the user has used the --force flag and
+        // we don't care if we overwrite it.
+        // We pass output_file_name to these functions so they don't have to figure
+        // out what to name the output_file_name all over again.
         match action_to_take {
             Action::EncryptDir => encrypt_dir(pubkey, target_file_name, &output_file_name),
             Action::DecryptDir => decrypt_dir(key, target_file_name, &output_file_name),
@@ -102,6 +105,9 @@ fn main() -> std::io::Result<()> {
     }
 }
 
+/// Using the user's input, and having determined which action the user wants us to take, this
+/// function determines what we should name the outputted file. Since it's always created in the
+/// current working directory, the _path_ of the outputted directory isn't super relevant.
 fn determine_output_file_name(
     target_file_name: &str,
     action_to_take: &Action,
