@@ -11,20 +11,24 @@ Bottle has no config options, one flag, and only takes a single parameter, in an
 1. [Install Rust](https://www.rust-lang.org/tools/install), if you haven't already. Recommend version 1.57+.
 2. Install Bottle by running: `cargo install --git https://github.com/sts10/bottle-rs --branch main`
 
-Optional: While Bottle does not require [age](https://github.com/FiloSottile/age#installation) to be installed, you may want to have it handy. Probably best to use age version 1.0+ when interacting with bottled files. 
+Optional: While Bottle does not require [age](https://github.com/FiloSottile/age#installation) be installed, you may want to have it handy. Probably best to use age version 1.0+ when interacting with bottled files. 
 
 Bottle's executable command is `bottle`.
 
 ## Usage 
 
+### Things to know about Bottle
+
 Bottle is hard-coded to use an Age Identity (basically a public/private key-pair) located at `~/.bottle/bottle_key.txt`. If there isn't a file there, Bottle will create one the first time you use Bottle.
 
-Bottle will always create the outputted file or directory **in the current working directory**. It will be named automatically based on the inputted file. If a file or directory with that name already exists, by default Bottle will exit. Users can force an overwrite with the `--force`/`-f` flag.
+Bottle will always create the outputted file or directory **in the current working directory**. This outputted file will be named automatically based on the inputted file. If a file or directory with that name already exists, Bottle will throw an error and quit. Users can force an overwrite with the `--force`/`-f` flag.
+
+### The (informal) basics
 
 - Encrypt a file with `bottle <path/to/file>`
-- Compress and encrypt a directory with `bottle <path/to/directory>`. 
-- Decrypt an age-encrypted file with `bottle <path/to/file>.age`
-- Decrypt and extract a `.tar.gz.age` file with `bottle <path/to/archive>.tar.gz.age`.
+- Compress and encrypt a directory with `bottle <path/to/directory>`
+- Decrypt an age-encrypted file with `bottle <path/to/file.age>`. (Must have a `.age` extension.)
+- Decrypt and extract a `.tar.gz.age` file with `bottle <path/to/archive.tar.gz.age>`. (Must have a `.tar.gz.age` extension.)
 
 ### Help text
 
@@ -50,11 +54,11 @@ ARGS:
 - [X] Have it be way more cautious when potentially overwriting a file or directory.
 - [ ] Ability to encrypt a directory with only access to a public key. (Like `age`'s `-R` flag.)
 - [ ] Ability to print (public) key of key-pair at `~/.bottle/bottle_key.txt`
-- [ ] Consider a flag to add a timestamp to the file name of encrypted files. May aid in overwriting issue.
-- [ ] Consider an option NOT to compress directory before encrypting it. Would need to be able to unbottle .tar.age files.
+- [ ] Consider a flag to add a timestamp to the file name of encrypted files.
+- [ ] Consider adding an option to NOT to compress directory before encrypting it. Would need to be able to unbottle .tar.age files.
 - [ ] An option to use your ssh key instead ([which age supports](https://github.com/FiloSottile/age#ssh-keys))
 - [ ] Might be neat if could read file from [stdin](https://doc.rust-lang.org/std/io/struct.Stdin.html) and/or output to stdout, so could be used in a shell-command chain.
 
 ## Other tools you may be interested in 
 
-Before writing this Rust tool, I tried to do something similar using [a shell script](https://github.com/sts10/bottle).
+Before writing this Rust tool, I tried to do something similar using [a shell script](https://github.com/sts10/bottle). I'd say stick with this Rust version, though!
