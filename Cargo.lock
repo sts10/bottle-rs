@@ -125,7 +125,7 @@ dependencies = [
 
 [[package]]
 name = "bottle"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "age",
  "chrono",
