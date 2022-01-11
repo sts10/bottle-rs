@@ -67,16 +67,18 @@ fn main() -> std::io::Result<()> {
         Action::EncryptFile
     };
 
-    if !opt.force_overwrite && output_file_exists(target_file_name, &action_to_take) {
+    let output_file_name = determine_output_file_name(target_file_name, &action_to_take);
+
+    if !opt.force_overwrite && Path::new(&output_file_name).exists() {
         if is_dir {
             // If given a directory, that means Bottle is being asked to make a file.
             // If we're here, that means that file already exists, and user didn't give the
             // --force flag.
-            eprintln!("This command would overwrite an existing file. To do this, re-run with --force flag");
+            eprintln!("This command would overwrite existing file {}. To do this, re-run with --force flag", output_file_name);
             // Err(ErrorKind::AlreadyExists)
             return Err(Error::new(ErrorKind::Other, "File exists"));
         } else {
-            eprintln!("This command would overwrite an existing directory. To do this, re-run with --force flag");
+            eprintln!("This command would overwrite an existing directory {}. To do this, re-run with --force flag", output_file_name);
             // Err(ErrorKind::AlreadyExists)
             return Err(Error::new(ErrorKind::Other, "Directory exists"));
         }
@@ -86,24 +88,21 @@ fn main() -> std::io::Result<()> {
         // going to use OR the user has used the --force flag and we don't care if
         // we overwrite it.
         match action_to_take {
-            Action::EncryptDir => encrypt_dir(pubkey, target_file_name),
-            Action::DecryptDir => decrypt_dir(key, target_file_name),
-            Action::EncryptFile => encrypt_file(pubkey, target_file_name),
-            Action::DecryptFile => decrypt_file(key, target_file_name),
+            Action::EncryptDir => encrypt_dir(pubkey, target_file_name, &output_file_name),
+            Action::DecryptDir => decrypt_dir(key, target_file_name, &output_file_name),
+            Action::EncryptFile => encrypt_file(pubkey, target_file_name, &output_file_name),
+            Action::DecryptFile => decrypt_file(key, target_file_name, &output_file_name),
         }
     }
 }
 
-fn output_file_exists(target_file_name: &str, action_to_take: &Action) -> bool {
+fn determine_output_file_name(target_file_name: &str, action_to_take: &Action) -> String {
     let target_file_name_as_string = Path::new(target_file_name)
         .file_name()
         .unwrap()
         .to_str()
         .unwrap()
         .to_owned();
-
-    // let file_name_without_extension =
-    //     split_and_vectorize(&target_file_name_as_string, ".")[0].to_string();
 
     let target_file_name_minus_first_extension = Path::new(target_file_name)
         .file_stem() // strip the .age extenion
@@ -115,10 +114,10 @@ fn output_file_exists(target_file_name: &str, action_to_take: &Action) -> bool {
         split_and_vectorize(&target_file_name_as_string, ".")[0].to_string();
 
     match action_to_take {
-        Action::EncryptFile => Path::new(&(target_file_name_as_string + ".age")).exists(),
-        Action::EncryptDir => Path::new(&(target_file_name_as_string + ".tar.gz.age")).exists(),
-        Action::DecryptFile => Path::new(&target_file_name_minus_first_extension).exists(),
-        Action::DecryptDir => Path::new(&file_name_without_extensions).exists(),
+        Action::EncryptFile => target_file_name_as_string + ".age",
+        Action::EncryptDir => target_file_name_as_string + ".tar.gz.age",
+        Action::DecryptFile => target_file_name_minus_first_extension.to_string(),
+        Action::DecryptDir => file_name_without_extensions,
     }
 }
 

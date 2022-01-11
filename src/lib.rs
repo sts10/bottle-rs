@@ -86,36 +86,34 @@ pub fn decrypt_bytes(key: age::x25519::Identity, encrypted_bytes: Vec<u8>) -> Ve
     decrypted
 }
 
-pub fn encrypt_file(pubkey: age::x25519::Recipient, target_file_name: &str) -> std::io::Result<()> {
+pub fn encrypt_file(
+    pubkey: age::x25519::Recipient,
+    target_file_name: &str,
+    output_filename: &str,
+) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
-    let output_filename = Path::new(target_file_name)
-        .file_name()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_owned()
-        + ".age"; // add the .age extension
 
     let encrypted_bytes = encrypt_bytes(pubkey, &target_file);
 
     write_file_to_system(&encrypted_bytes, &output_filename)
 }
 
-pub fn decrypt_file(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
-    let output_filename = Path::new(target_file_name)
-        .file_stem() // strip the .age extenion
-        .unwrap()
-        .to_str()
-        .unwrap();
-
+pub fn decrypt_file(
+    key: age::x25519::Identity,
+    target_file_name: &str,
+    output_filename: &str,
+) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
     let decrypted = decrypt_bytes(key, target_file);
 
     write_file_to_system(&decrypted, output_filename)
 }
 
-pub fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) -> std::io::Result<()> {
-    let output_name = parse_output_name(target_file_name) + ".tar.gz.age";
+pub fn encrypt_dir(
+    pubkey: age::x25519::Recipient,
+    target_file_name: &str,
+    output_filename: &str,
+) -> std::io::Result<()> {
     // Writing a plaintext tar file to the file system is a potential security issue.
     // But at least this temporary tar file is created in the same
     // directory as the directory that we're bottling, NOT in the current
@@ -136,12 +134,14 @@ pub fn encrypt_dir(pubkey: age::x25519::Recipient, target_file_name: &str) -> st
     // Clean up
     fs::remove_file(&temp_tar_file_path)?;
 
-    write_file_to_system(&encrypted_bytes, &output_name)
+    write_file_to_system(&encrypted_bytes, &output_filename)
 }
 
-pub fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) -> std::io::Result<()> {
-    let output_name = parse_output_name(target_file_name);
-
+pub fn decrypt_dir(
+    key: age::x25519::Identity,
+    target_file_name: &str,
+    output_dir_name: &str,
+) -> std::io::Result<()> {
     let target_file = fs::read(target_file_name)?;
     let decrypted_bytes = decrypt_bytes(key, target_file);
 
@@ -158,7 +158,7 @@ pub fn decrypt_dir(key: age::x25519::Identity, target_file_name: &str) -> std::i
     fs::remove_file("_decrypted.tar")?;
 
     // https://docs.rs/tar/latest/tar/struct.Archive.html#method.unpack
-    a.unpack(output_name)
+    a.unpack(output_dir_name)
 }
 
 fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Error> {
