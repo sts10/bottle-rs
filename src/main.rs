@@ -111,14 +111,9 @@ fn take_action(
             // If we're here, that means that file already exists, and user didn't give the
             // --force flag.
             // Note: I'm not sure if this is the best way to inform user of the situation/error.
-            // eprintln!("This command would overwrite existing file {}. To do this, re-run with --force flag", output_file_name);
-            // return Err(Error::new(ErrorKind::AlreadyExists, "File exists"));
             let error_message = format!("Warning: This command would overwrite existing file {}. To do this, re-run with --force flag.", output_file_name);
             Err(Error::new(ErrorKind::AlreadyExists, error_message))
         } else {
-            // eprintln!("This command would overwrite an existing directory {}. To do this, re-run with --force flag.", output_file_name);
-            // return Err(Error::new(ErrorKind::AlreadyExists, "Directory exists"));
-
             let error_message = format!("Warning: This command would overwrite existing directory {}. To do this, re-run with --force flag.", output_file_name);
             Err(Error::new(ErrorKind::AlreadyExists, error_message))
         }
