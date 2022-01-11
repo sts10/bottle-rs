@@ -103,7 +103,7 @@ And while this may sound obvious, Bottle is not a re-write of the `age` or [`rag
 
 ## Other notes
 
-This project is not affiliated with the similarly named [bitbottle](https://code.lag.net/robey/bitbottle) project, nor are the archive file formats compatible, to my knowledge. Sorry about the name conflict... open an issue if you have a suggestion for a new name for this project!
+This project is not affiliated with the similarly named [bitbottle](https://code.lag.net/robey/bitbottle) project, nor are the archive file formats compatible, to my knowledge. That said, it looks much more sophisticated than my tool, so it might fit your needs better. Also, sorry about the name conflict... worried I subconsciously copied it. Open an issue if you have a suggestion for a new name for this project!
 
 ## To do
 
@@ -116,6 +116,6 @@ This project is not affiliated with the similarly named [bitbottle](https://code
 - [ ] An option to use your ssh key instead ([which age supports](https://github.com/FiloSottile/age#ssh-keys))
 - [ ] Might be neat if could read file from [stdin](https://doc.rust-lang.org/std/io/struct.Stdin.html) and/or output to stdout, so could be used in a shell-command chain.
 
-## Other tools you may be interested in 
+## Ports of Bottle
 
 Before writing this Rust tool, I tried to do something similar using [a shell script](https://github.com/sts10/bottle). I'd say stick with this Rust version, though!
