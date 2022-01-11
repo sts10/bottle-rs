@@ -1,6 +1,6 @@
 # Bottle
 
-A Rush command-line tool to compress and encrypt (and decrypt and extract) files or directories using [age](https://github.com/FiloSottile/age), gzip, and tar. 
+A Rust command-line tool that can compress and encrypt (and decrypt and extract) files or directories using [age](https://github.com/FiloSottile/age), gzip, and tar. 
 
 Bottle has no config options and optionally accepts two (simple) flags, in an attempt to follow age's philosophy of simplicity. It can take multiple files or directories.
 
