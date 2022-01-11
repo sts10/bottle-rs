@@ -85,13 +85,14 @@ Notably, this is different than how the `tar` command works, which would group a
 
 ## Troubleshooting
 
-If you have a `.tar.gz.age` file that you encrypted with Bottle, but now you can't install or get the `bottle` tool to work, fear not!
+Let's say you have a `.tar.gz.age` file that you encrypted with Bottle, but now you can't install or get the `bottle` tool to work. Here's a procedure for decrypting and extracting it _without_ using Bottle (though you still need you `bottle_key.txt` file).
 
 With [age installed](https://github.com/FiloSottile/age#installation), try the following two commands to decrypt and extract your archive file:
 
 ```bash
 age --decrypt -i ~/.bottle/bottle_key.txt my_archive.tar.gz.age > compressed_decrypted_archive.tar.gz
-tar -xzf compressed_decrypted_archive.tar.gz
+mkdir my_archive
+tar -xf compressed_decrypted_archive.tar.gz -C ./my_archive
 ```
 
 ## Non-goals of the project (and recommended tools)
