@@ -128,12 +128,12 @@ fn take_action(
 /// Using the user's input, and having determined which action the user wants us to take, this
 /// function determines what we should name the outputted file. Since it's always created in the
 /// current working directory, the _path_ of the outputted directory isn't super relevant.
-// I don't like how this function is laid out...
 fn determine_output_file_name(
     target_file_name: &str,
     action_to_take: &Action,
     add_timestamp: bool,
 ) -> String {
+    // I don't like how this function is laid out...
     let target_file_name_as_string = Path::new(target_file_name)
         .file_name()
         .unwrap()
