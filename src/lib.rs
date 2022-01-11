@@ -119,22 +119,43 @@ pub fn encrypt_dir(
     // directory as the directory that we're bottling, NOT in the current
     // working directory, which user likely does NOT
     // want an unencrypted tar file to exists, even momentarily.
-    let temp_tar_file_path = target_file_name.to_owned() + "_tarfile.tar";
+
+    // let temp_tar_file_path =
+    //     "/tmp/".to_owned() + "_" + target_file_name + "_tarfile_created_by_bottle.tar";
+    // Or go one dir up...
+    let temp_tar_file_path = compose_path_for_temp_tar_file(target_file_name, output_filename);
 
     make_tar_from_dir(target_file_name, &temp_tar_file_path)
         .expect("Unable to make tar from given directory");
-    // Now we compress the temp_tar_file_path with gzip
+
+    // Read this newly created tarfile into memory
     let tar_file_as_bytes = fs::read(&temp_tar_file_path)?;
+    // Immediately remove temp tar file
+    fs::remove_file(&temp_tar_file_path)?;
+
+    // Now we compress the temp_tar_file_path with gzip
     let mut e = GzEncoder::new(Vec::new(), Compression::default());
     e.write_all(&tar_file_as_bytes)?;
     let compressed_bytes = e.finish()?;
 
     let encrypted_bytes = encrypt_bytes(pubkey, &compressed_bytes);
 
-    // Clean up
-    fs::remove_file(&temp_tar_file_path)?;
-
     write_file_to_system(&encrypted_bytes, &output_filename)
+}
+
+fn compose_path_for_temp_tar_file(target_file_name: &str, output_filename: &str) -> String {
+    // Put our temp tarfile in the parent directory
+    Path::new(target_file_name)
+        // .file_name()
+        .parent()
+        .expect("Must have access to parent directory")
+        .to_str()
+        .unwrap()
+        .to_owned()
+        + "/_tarfile_created_by_bottle_for_"
+        + &output_filename.replace(".", "_")
+        + ".tar"
+    // alt approach: "/tmp/"
 }
 
 pub fn decrypt_dir(
@@ -162,7 +183,10 @@ pub fn decrypt_dir(
 }
 
 fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Error> {
-    let file = File::create(tar_name).unwrap();
+    let file = match File::create(tar_name) {
+        Ok(file) => file,
+        Err(e) => panic!("Error making tar from dir: {}", e),
+    };
     let mut a = Builder::new(file);
 
     // Use the directory at one location, but insert it into the archive
