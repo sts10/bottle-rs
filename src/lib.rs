@@ -95,7 +95,7 @@ pub fn encrypt_file(
 
     let encrypted_bytes = encrypt_bytes(pubkey, &target_file);
 
-    write_file_to_system(&encrypted_bytes, &output_filename)
+    write_file_to_system(&encrypted_bytes, output_filename)
 }
 
 pub fn decrypt_file(
@@ -142,7 +142,7 @@ pub fn encrypt_dir(
     let encrypted_bytes = encrypt_bytes(pubkey, &compressed_bytes);
 
     // And finally write it to the file system
-    write_file_to_system(&encrypted_bytes, &output_filename)
+    write_file_to_system(&encrypted_bytes, output_filename)
 }
 
 fn compose_path_for_temp_tar_file(target_file_name: &str, output_filename: &str) -> String {
