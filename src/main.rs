@@ -19,13 +19,13 @@ struct Opt {
     #[structopt(short = "t", long = "time-stamp")]
     timestamp: bool,
 
-    /// File or directory to either encrypt or decrypt.
+    /// Files and/or directories to either encrypt or decrypt.
     /// If given a directory, will tar, then gzip (compress), then encrypt, creating a file with
-    /// the extension .tar.gz.age.
-    /// If given a .tar.gz.age file, will decrypt and extract contents.
+    /// the extension .tar.gz.age. If given a .tar.gz.age file, will decrypt and extract contents.
+    /// Can accept multiple targets. Bottle will act on each of them separately.
     /// All outputted files are placed in the current working directory.
-    #[structopt(name = "TARGET", parse(from_os_str))]
-    target_file: PathBuf,
+    #[structopt(name = "TARGETS", parse(from_os_str))]
+    target_files: Vec<PathBuf>,
 }
 
 enum Action {
@@ -40,10 +40,21 @@ fn main() -> std::io::Result<()> {
     let key = find_or_generate_age_identity()?;
 
     let opt = Opt::from_args();
-    // I'm sure we can do this better...
-    let target_file_name = opt.target_file.to_str().unwrap();
+    // Iterate through received target_files,
+    for target_file in opt.target_files {
+        // I'm sure we can do this better...
+        let target_file_name = target_file.to_str().unwrap();
 
-    take_action(target_file_name, key, opt.timestamp, opt.force_overwrite)
+        // Take appropriate action on this target_file,
+        // depending on it being a directory or on its file extension
+        take_action(
+            target_file_name,
+            key.clone(),
+            opt.timestamp,
+            opt.force_overwrite,
+        )?;
+    }
+    Ok(())
 }
 
 fn take_action(
@@ -130,17 +141,6 @@ fn determine_output_file_name(
         .unwrap()
         .to_owned();
 
-    let target_file_name_minus_first_extension = Path::new(target_file_name)
-        .file_stem() // strip the .age extenion
-        .unwrap()
-        .to_str()
-        .unwrap();
-
-    // Not sure how to do this in a better way
-    let file_name_without_tar_gz_age_extensions = target_file_name_as_string.trim()
-        [0..target_file_name_as_string.trim().len() - 11]
-        .to_string();
-
     let timestamp = if add_timestamp {
         "__bottled_".to_owned()
             + &chrono::Local::now()
@@ -154,8 +154,17 @@ fn determine_output_file_name(
     match action_to_take {
         Action::EncryptFile => target_file_name_as_string + &timestamp + ".age",
         Action::EncryptDir => target_file_name_as_string + &timestamp + ".tar.gz.age",
-        Action::DecryptFile => target_file_name_minus_first_extension.to_string(),
-        Action::DecryptDir => file_name_without_tar_gz_age_extensions,
+        Action::DecryptFile => {
+            Path::new(target_file_name)
+                .file_stem() // strip the .age extenion
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string()
+        }
+        Action::DecryptDir => target_file_name_as_string.trim()
+            [0..target_file_name_as_string.trim().len() - 11] // remove .tar.gz.age
+            .to_string(),
     }
 }
 

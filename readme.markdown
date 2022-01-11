@@ -2,7 +2,7 @@
 
 A Rush command-line tool to compress and encrypt (and decrypt and extract) files or directories using [age](https://github.com/FiloSottile/age), gzip, and tar. 
 
-Bottle has no config options, optionally accepts two (simple) flags, and only takes a single parameter, in an attempt to follow age's philosophy of simplicity.
+Bottle has no config options and optionally accepts two (simple) flags, in an attempt to follow age's philosophy of simplicity. It can take multiple files or directories.
 
 **This program is currently just a toy. I would not use it for real-world encryption/archiving at this time.** As [the age crate, which this tool uses, warns](https://docs.rs/age/0.7.1/age/index.html), "Caution: all crate versions prior to 1.0 are beta releases for testing purposes only."
 
@@ -30,11 +30,13 @@ Bottle will always create the outputted file or directory **in the current worki
 - Decrypt an age-encrypted file with `bottle <path/to/file.age>`. (Must have a `.age` extension.)
 - Decrypt and extract a `.tar.gz.age` file with `bottle <path/to/archive.tar.gz.age>`. (Must have a `.tar.gz.age` extension.)
 
+If given multiple "targets", it will act on them completely independently.
+
 ### Help text
 
 ```
 USAGE:
-    bottle [FLAGS] <TARGET>
+    bottle [FLAGS] [TARGETS]...
 
 FLAGS:
     -f, --force         Force overwrite when creating a file or directory
@@ -45,10 +47,10 @@ FLAGS:
     -V, --version       Prints version information
 
 ARGS:
-    <TARGET>    File or directory to either encrypt or decrypt. If given a directory, will tar, then gzip
-                (compress), then encrypt, creating a file with the extension .tar.gz.age. If given a .tar.gz.age
-                file, will decrypt and extract contents. All outputted files are placed in the current working
-                directory
+    <TARGETS>...    Files and/or directories to either encrypt or decrypt. If given a directory, will tar, then gzip
+                    (compress), then encrypt, creating a file with the extension .tar.gz.age. If given a .tar.gz.age
+                    file, will decrypt and extract contents. Can accept multiple targets. Bottle will act on each of
+                    them separately. All outputted files are placed in the current working directory
 ```
 
 ## To do
