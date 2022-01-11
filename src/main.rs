@@ -38,13 +38,22 @@ enum Action {
 fn main() -> std::io::Result<()> {
     // Set up hard-coded key
     let key = find_or_generate_age_identity()?;
-    let pubkey = key.to_public();
 
     let opt = Opt::from_args();
     // I'm sure we can do this better...
     let target_file_name = opt.target_file.to_str().unwrap();
 
-    // Gather some data we'll need to determine what action
+    take_action(target_file_name, key, opt.timestamp, opt.force_overwrite)
+}
+
+fn take_action(
+    target_file_name: &str,
+    key: age::x25519::Identity,
+    add_timestamp: bool,
+    force_overwrite: bool,
+) -> std::io::Result<()> {
+    let pubkey = key.to_public();
+    // First, gather some data we'll need to determine what action
     // to take
     let metadata = fs::metadata(target_file_name)?;
     let is_dir = metadata.file_type().is_dir();
@@ -74,9 +83,9 @@ fn main() -> std::io::Result<()> {
     };
 
     let output_file_name =
-        determine_output_file_name(target_file_name, &action_to_take, opt.timestamp);
+        determine_output_file_name(target_file_name, &action_to_take, add_timestamp);
 
-    if !opt.force_overwrite && Path::new(&output_file_name).exists() {
+    if !force_overwrite && Path::new(&output_file_name).exists() {
         if is_dir {
             // If given a directory, that means Bottle is being asked to make a file.
             // If we're here, that means that file already exists, and user didn't give the
