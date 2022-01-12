@@ -196,7 +196,14 @@ fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Erro
     // https://docs.rs/tar/latest/tar/struct.Builder.html#method.append_dir_all
     a.append_dir_all(".", dir_name).unwrap();
 
-    a.finish()
+    // eprintln!("About to call finish");
+    // a.finish();
+    let tarred_bytes = a.into_inner();
+    tarred_bytes
+
+    // eprintln!("About to call drop");
+    // drop(a);
+    // Ok(())
 }
 
 fn write_file_to_system(data: &[u8], file_name: &str) -> std::io::Result<()> {
