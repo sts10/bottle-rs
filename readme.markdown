@@ -83,6 +83,12 @@ Bottle can even encrypt multiple files and directories with one command: `bottle
 
 Notably, this is different than how the `tar` command works, which would group all given files into a single archive. If you want Bottle to put multiple files or directories into one "bottle", first put them all in a single directory, then run `bottle` on that directory.
 
+## Limitations
+
+Bottle currently reads entire files (or, for directories, entire tar files) into memory. This means the size of the file/directory you bottle is limited by the amount of RAM on your machine. 
+
+This is... obviously not good. I've created [an issue to focus my work on solving it](https://github.com/sts10/bottle-rs/issues/1). But in the meantime, **I would avoid bottling any files or directories over a few GBs**... Sorry!
+
 ## Troubleshooting
 
 Let's say you have a `.tar.gz.age` file that you encrypted with Bottle, but now you can't install or get the `bottle` tool to work. Here's a procedure for decrypting and extracting it _without_ using Bottle (though you still need you `bottle_key.txt` file).
