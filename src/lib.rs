@@ -4,6 +4,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs;
 use std::fs::File;
+// use std::io::BufReader;
 // use std::io::{Error, ErrorKind};
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
@@ -114,38 +115,24 @@ pub fn encrypt_dir(
     target_file_name: &str,
     output_filename: &str,
 ) -> std::io::Result<()> {
-    // In order to encrypt a directory, Bottle tar's it first.
-    // One question/issue with this is that the tar file (which is not yet encrypted)
-    // has to live somewhere on the file system, however briefly. I think this is
-    // a potential security issue.
-    // In an attempt to mitigate this threat, Bottle creates this temporary tar
-    // file in the parent directory of the directory that we're bottling,
-    // NOT in the current working directory, which user likely does NOT
-    // want an unencrypted tar file to exists, even momentarily.
-    let temp_tar_file_path = compose_path_for_temp_tar_file(target_file_name, output_filename);
+    // First, we convert the directory the user gave us into tarred bytes
+    let tarred_bytes = make_tarred_bytes_from_dir(target_file_name)
+        .expect("Unable to make tarred bytes from given directory");
 
-    make_tar_from_dir(target_file_name, &temp_tar_file_path)
-        .expect("Unable to make tar from given directory");
-
-    // Read this newly created tarfile into memory...
-    let tar_file_as_bytes = fs::read(&temp_tar_file_path)?;
-    // And then immediately remove temp tar file
-    fs::remove_file(&temp_tar_file_path)?;
-
-    // Now we compress the bytes of the tar file with gzip
+    // Now we compress the tarred bytes with gzip
     let mut e = GzEncoder::new(Vec::new(), Compression::default());
-    e.write_all(&tar_file_as_bytes)?;
+    e.write_all(&tarred_bytes)?;
     let compressed_bytes = e.finish()?;
 
     // Then we encrypt these compressed bytes with the age public key
     // we received.
     let encrypted_bytes = encrypt_bytes(pubkey, &compressed_bytes);
 
-    // And finally write it to the file system
+    // And finally write it to the file system as a .tar.gz.age file!
     write_file_to_system(&encrypted_bytes, output_filename)
 }
 
-fn compose_path_for_temp_tar_file(target_file_name: &str, output_filename: &str) -> String {
+fn _compose_path_for_temp_tar_file(target_file_name: &str, output_filename: &str) -> String {
     // For security reasons (see comment above) , we want to put our temp
     // tarfile in the parent directory of the directory we're bottling.
     // A possible alternative approach would be to put it in "/tmp/"?
@@ -184,26 +171,19 @@ pub fn decrypt_dir(
     a.unpack(output_dir_name)
 }
 
-fn make_tar_from_dir(dir_name: &str, tar_name: &str) -> Result<(), std::io::Error> {
-    let file = match File::create(tar_name) {
-        Ok(file) => file,
-        Err(e) => panic!("Error making tar from dir at {}\nError msg:{}", tar_name, e),
-    };
-    let mut a = Builder::new(file);
+fn make_tarred_bytes_from_dir(dir_name: &str) -> Result<Vec<u8>, std::io::Error> {
+    // Create a buffer for us to Write into
+    let b: Vec<u8> = Vec::new();
+    // Create a tar::Builder thing
+    let mut a = Builder::new(b);
 
     // Use the directory at one location, but insert it into the archive
     // with a different name.
     // https://docs.rs/tar/latest/tar/struct.Builder.html#method.append_dir_all
     a.append_dir_all(".", dir_name).unwrap();
 
-    // eprintln!("About to call finish");
-    // a.finish();
     let tarred_bytes = a.into_inner();
     tarred_bytes
-
-    // eprintln!("About to call drop");
-    // drop(a);
-    // Ok(())
 }
 
 fn write_file_to_system(data: &[u8], file_name: &str) -> std::io::Result<()> {
