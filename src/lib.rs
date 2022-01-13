@@ -157,15 +157,20 @@ pub fn decrypt_dir(
 
     // At this point, decrypted_bytes needs to be decompressed.
     let mut d = GzDecoder::new(&*decrypted_bytes);
-    let mut bytes = vec![];
-    d.read_to_end(&mut bytes).expect("Error uncompressing file");
-    write_file_to_system(&bytes, "_decrypted.tar")?;
+    let mut bytes: &[u8] = &mut [0 as u8; 10]; //vec![];
+    loop {
+        d.read(&mut bytes).expect("Error uncompressing file");
+        if &bytes == &[0 as u8; 10] {
+            break;
+        }
+    }
+    let mut a = Archive::new(&mut bytes);
+    // write_file_to_system(&bytes, "_decrypted.tar")?;
 
-    // Finally, we untar the file.
-    let file = File::open("_decrypted.tar")?;
-    let mut a = Archive::new(file);
+    // // Finally, we untar the file.
+    // let file = File::open("_decrypted.tar")?;
 
-    fs::remove_file("_decrypted.tar")?;
+    // fs::remove_file("_decrypted.tar")?;
 
     // https://docs.rs/tar/latest/tar/struct.Archive.html#method.unpack
     a.unpack(output_dir_name)
