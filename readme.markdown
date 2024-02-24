@@ -91,7 +91,7 @@ This is... obviously not good. I've created [an issue to focus my work on solvin
 
 ## Troubleshooting
 
-Let's say you have a `.tar.gz.age` file that you encrypted with Bottle, but now you can't install or get the `bottle` tool to work. Here's a procedure for decrypting and extracting it _without_ using Bottle (though you still need you `bottle_key.txt` file).
+Let's say you have a `.tar.gz.age` file that you encrypted with Bottle, but now you can't install or get the `bottle` tool to work. Here's a procedure for decrypting and extracting it _without_ using Bottle (though you still need your original `bottle_key.txt` file).
 
 With [age installed](https://github.com/FiloSottile/age#installation), try the following two commands to decrypt and extract your archive file:
 
